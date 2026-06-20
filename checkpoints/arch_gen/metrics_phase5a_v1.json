@@ -1,0 +1,109 @@
+{
+  "metrics": {
+    "task_nano_zero_loss": 3.5027411773800843,
+    "task_nano_zero_acc": 0.15622787475585936,
+    "random_zero_loss": 4.237668913602829,
+    "task_nano_zero_delta_vs_random": 0.7349277362227449,
+    "task_nano_ft100_loss": 2.2309207059442997,
+    "task_nano_ft100_delta_vs_random": 0.30835247561335555,
+    "nano_cond_zero_loss": 4.04872966259718,
+    "nano_cond_zero_acc": 0.03368988037109375,
+    "nano_cond_zero_delta_vs_random": 0.18893925100564957,
+    "nano_cond_ft100_loss": 2.7135650679469108,
+    "nano_cond_ft100_delta_vs_random": -0.17429188638925552,
+    "nano_jepa_zero_loss": 4.197434958815575,
+    "nano_jepa_zero_acc": 0.0197235107421875,
+    "nano_jepa_zero_delta_vs_random": 0.040233954787254333,
+    "nano_jepa_ft100_loss": 2.4808045238256455,
+    "nano_jepa_ft100_delta_vs_random": 0.05846865773200971,
+    "arch_match_mean": 0.6875,
+    "random_zero": 4.233331513404846,
+    "grid_size": 96,
+    "vocab": 65,
+    "collect_n": 15,
+    "cloud": true,
+    "smoke": false
+  },
+  "examples": [
+    {
+      "task": "small fast shakespeare char completion model",
+      "spec": [
+        256,
+        4,
+        8,
+        128
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "medium balanced text autocompletion transformer",
+      "spec": [
+        128,
+        6,
+        4,
+        128
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "large wide capacity shakespeare language model",
+      "spec": [
+        256,
+        4,
+        8,
+        128
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "deep reasoning transformer for text prediction",
+      "spec": [
+        256,
+        8,
+        8,
+        256
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "lightweight efficient char-level nano gpt",
+      "spec": [
+        128,
+        6,
+        4,
+        128
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large deep shakespeare transformer with long context",
+      "spec": [
+        256,
+        8,
+        8,
+        256
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "compact small model for quick text completion",
+      "spec": [
+        256,
+        4,
+        8,
+        128
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "wide medium transformer for character prediction",
+      "spec": [
+        256,
+        8,
+        8,
+        256
+      ],
+      "match": 1.0
+    }
+  ]
+}

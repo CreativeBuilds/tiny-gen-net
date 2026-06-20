@@ -1,0 +1,46 @@
+{
+  "tag": "phase3_refine_v1",
+  "cond_train_steps": 2000,
+  "num_eval": 50,
+  "diversity": {
+    "unique": 26,
+    "hidden_dim": {
+      "96": 10,
+      "32": 8,
+      "64": 8,
+      "128": 9,
+      "48": 5,
+      "160": 5,
+      "24": 5
+    },
+    "depth": {
+      "2": 13,
+      "3": 32,
+      "1": 5
+    },
+    "skip": {
+      "false": 37,
+      "true": 13
+    },
+    "grid_size": 35
+  },
+  "noise_sweep_zero_loss": {
+    "0.25": 1.6368279844522475,
+    "0.5": 1.63957171022892,
+    "1.0": 1.6502161014080048,
+    "2.0": 1.691046398282051
+  },
+  "prev_cond_v1_zero": 1.7265677336851757,
+  "cond_zero_loss": 1.7085441023111343,
+  "cond_zero_acc": 0.27064062499999997,
+  "random_zero_loss": 2.0794442775249484,
+  "cond_zero_delta_vs_random": 0.37090017521381413,
+  "cond_ft100_loss": 1.065799755036831,
+  "cond_ft100_delta_vs_random": 0.15230185586214073,
+  "ref_hybrid_zero_loss": 1.9626177191734313,
+  "ref_hybrid_zero_acc": 0.1953125,
+  "ref_hybrid_zero_delta_vs_random": 0.11682655835151712,
+  "ref_hybrid_ft100_loss": 1.0487967252731323,
+  "ref_hybrid_ft100_delta_vs_random": 0.16930488562583945,
+  "cond_minus_v1_zero": 0.018023631374041393
+}

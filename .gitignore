@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+.env.*
+
+# PyTorch checkpoints (large — regenerate via experiments/)
+checkpoints/**/*.pt
+checkpoints/**/*.pth
+checkpoints/weights/**/*
+!checkpoints/weights/**/meta.json
+!checkpoints/.gitkeep
+
+# Plots (regenerate from metrics / experiments)
+checkpoints/plots/
+*.png
+*.pdf
+
+# Small metrics + run logs are kept for reproducibility
+!checkpoints/**/metrics_*.json
+!checkpoints/logs/runs.jsonl
+
+# Generated / downloaded data
+data/generated/
+data/text/shakespeare.txt
+
+# RunPod / local runtime
+.runpod_pod_id
+logs/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Cursor local editor state (rules/skills/commands are tracked)
+.cursor/settings.json

@@ -1,0 +1,79 @@
+{
+  "metrics": {
+    "task_nano_zero_loss": 3.805294818878174,
+    "task_nano_zero_acc": 0.08219482421874999,
+    "random_zero_loss": 4.231335434913635,
+    "task_nano_zero_delta_vs_random": 0.4260406160354613,
+    "task_nano_ft50_loss": 2.707885875701904,
+    "task_nano_ft50_delta_vs_random": 0.013550066947937811,
+    "nano_cond_zero_loss": 4.139860649108887,
+    "nano_cond_zero_acc": 0.043671875000000006,
+    "nano_cond_zero_delta_vs_random": 0.09147478580474822,
+    "nano_cond_ft50_loss": 3.0465396237373357,
+    "nano_cond_ft50_delta_vs_random": -0.3251036810874939,
+    "nano_jepa_zero_loss": 3.8769122338294983,
+    "nano_jepa_zero_acc": 0.1029833984375,
+    "nano_jepa_zero_delta_vs_random": 0.35442320108413705,
+    "nano_jepa_ft50_loss": 2.626448400020599,
+    "nano_jepa_ft50_delta_vs_random": 0.09498754262924258,
+    "arch_match_mean": 0.4,
+    "random_zero": 4.233331251144409,
+    "grid_size": 96,
+    "vocab": 65,
+    "collect_n": 3,
+    "cloud": false,
+    "smoke": true
+  },
+  "examples": [
+    {
+      "task": "small fast shakespeare char completion model",
+      "spec": [
+        128,
+        4,
+        4,
+        128
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium balanced text autocompletion transformer",
+      "spec": [
+        128,
+        4,
+        4,
+        128
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "large wide capacity shakespeare language model",
+      "spec": [
+        128,
+        4,
+        4,
+        128
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "deep reasoning transformer for text prediction",
+      "spec": [
+        128,
+        4,
+        4,
+        128
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "lightweight efficient char-level nano gpt",
+      "spec": [
+        128,
+        4,
+        4,
+        128
+      ],
+      "match": 1.0
+    }
+  ]
+}

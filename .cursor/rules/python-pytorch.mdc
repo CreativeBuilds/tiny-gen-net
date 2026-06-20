@@ -1,0 +1,48 @@
+---
+description: PyTorch conventions for tiny-gen-net model and training code
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python / PyTorch Conventions
+
+## Style
+
+- Imports at top of file only (no inline imports unless circular dep is documented)
+- Early returns over `else` blocks; single-line guards when readable
+- Minimal comments — explain non-obvious math/design, not obvious code
+- Exhaustive switches: use `never` check in default case for unions/enums
+
+## Project layout
+
+- `src/models/` — TinyMLP and future tiny architectures (fixed arch in Phase 0–1)
+- `src/diffusion/` — DDPM on flattened weight vectors
+- `src/utils/weights.py` — flatten/unflatten, normalize/denormalize (use these, don't duplicate)
+- `src/utils/train_loop.py` — shared training/eval for TinyMLP
+- `data/synthetic_text.py` — synthetic char-level corpus
+
+## Scripts
+
+Entry scripts in `scripts/` and `experiments/` prepend repo root to `sys.path`:
+
+```python
+ROOT = Path(__file__).resolve().parents[1]  # or parents[1] from experiments/
+sys.path.insert(0, str(ROOT))
+```
+
+Run from repo root: `python experiments/phase0_train_baselines.py`
+
+## Reproducibility
+
+- Always accept/pass `--seed`; call `set_seed()` from `train_loop`
+- Device: `cuda if torch.cuda.is_available() else cpu`
+- Save checkpoints under `checkpoints/` with descriptive names
+
+## Weight pipeline
+
+1. Train TinyMLP → `flatten_state_dict(model)`
+2. Stack N models → `normalize_weights()` → save via `save_weight_collection()`
+3. Diffusion trains on normalized weights
+4. Sample → `denormalize_weights()` → `load_flat_into_model()`
+
+Never skip denormalization before loading sampled weights into TinyMLP.

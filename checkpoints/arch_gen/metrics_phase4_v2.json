@@ -1,0 +1,248 @@
+{
+  "tag": "phase4_v2",
+  "num_tasks": 25,
+  "match_weight": 0.5,
+  "avg_task_match": 0.92,
+  "examples": [
+    {
+      "task": "small shallow simple char predictor",
+      "spec": [
+        48,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "small efficient lightweight char predictor",
+      "spec": [
+        48,
+        3,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large deep skip connections char predictor",
+      "spec": [
+        160,
+        3,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large wide capacity char predictor",
+      "spec": [
+        128,
+        2,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium balanced char predictor",
+      "spec": [
+        64,
+        2,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "deep balanced reasoning char predictor",
+      "spec": [
+        64,
+        3,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "shallow fast char predictor",
+      "spec": [
+        48,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "small narrow compact char predictor",
+      "spec": [
+        24,
+        2,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large deep char predictor",
+      "spec": [
+        128,
+        3,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium simple char predictor",
+      "spec": [
+        64,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "efficient shallow char predictor",
+      "spec": [
+        48,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "wide deep skip connections char predictor",
+      "spec": [
+        96,
+        3,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "small balanced char predictor",
+      "spec": [
+        48,
+        2,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large capacity reasoning char predictor",
+      "spec": [
+        128,
+        3,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium deep char predictor",
+      "spec": [
+        64,
+        3,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "lightweight fast char predictor",
+      "spec": [
+        64,
+        2,
+        false
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "narrow deep char predictor",
+      "spec": [
+        24,
+        3,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large simple char predictor",
+      "spec": [
+        128,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium wide balanced char predictor",
+      "spec": [
+        64,
+        2,
+        false
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "small deep reasoning char predictor",
+      "spec": [
+        48,
+        3,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "compact shallow simple char predictor",
+      "spec": [
+        32,
+        1,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "wide large skip connections char predictor",
+      "spec": [
+        160,
+        2,
+        true
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "balanced medium char predictor",
+      "spec": [
+        64,
+        2,
+        false
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "efficient medium char predictor",
+      "spec": [
+        64,
+        3,
+        false
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "deep reasoning capacity char predictor",
+      "spec": [
+        160,
+        3,
+        false
+      ],
+      "match": 1.0
+    }
+  ],
+  "prev_v1_match": 0.7333333333333333,
+  "prev_v1_zero": 1.693004665374756,
+  "task_zero_loss": 1.761868624210358,
+  "task_zero_acc": 0.27643750000000006,
+  "random_zero_loss": 2.0794788088798524,
+  "task_zero_delta_vs_random": 0.3176101846694943,
+  "task_ft100_loss": 1.1053340442180637,
+  "task_ft100_delta_vs_random": 0.10957479369640333,
+  "uncond_zero_loss": 1.6744488828182222,
+  "uncond_zero_acc": 0.27534375,
+  "uncond_zero_delta_vs_random": 0.40502992606163013,
+  "uncond_ft100_loss": 1.0831679731607435,
+  "uncond_ft100_delta_vs_random": 0.13174086475372349,
+  "match_gain_vs_v1": 0.18666666666666676,
+  "zero_gain_vs_v1": -0.06886395883560215
+}

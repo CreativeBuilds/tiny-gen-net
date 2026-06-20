@@ -1,0 +1,269 @@
+{
+  "tag": "phase4b_v2",
+  "avg_task_match": 0.7266666666666666,
+  "prev_v1_match": 0.52,
+  "match_gain_vs_v1": 0.20666666666666655,
+  "train_pairs": 81,
+  "examples": [
+    {
+      "task": "small shallow fast char predictor transformer",
+      "spec": [
+        48,
+        2,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "small efficient lightweight transformer char predictor",
+      "spec": [
+        48,
+        3,
+        2
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large deep reasoning char predictor transformer",
+      "spec": [
+        32,
+        5,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "large wide capacity transformer char predictor",
+      "spec": [
+        96,
+        2,
+        16
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium balanced char predictor transformer",
+      "spec": [
+        64,
+        3,
+        2
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "deep balanced reasoning transformer char predictor",
+      "spec": [
+        64,
+        4,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "compact shallow char predictor transformer",
+      "spec": [
+        48,
+        2,
+        4
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large deep char predictor transformer",
+      "spec": [
+        32,
+        5,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "medium simple char predictor transformer",
+      "spec": [
+        64,
+        2,
+        4
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "efficient shallow transformer char predictor",
+      "spec": [
+        48,
+        2,
+        16
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "small balanced transformer char predictor",
+      "spec": [
+        64,
+        3,
+        2
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "large capacity reasoning transformer char predictor",
+      "spec": [
+        32,
+        2,
+        2
+      ],
+      "match": 0.0
+    },
+    {
+      "task": "medium deep char predictor transformer",
+      "spec": [
+        64,
+        4,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "wide deep transformer char predictor",
+      "spec": [
+        64,
+        4,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "large simple transformer char predictor",
+      "spec": [
+        96,
+        2,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium wide balanced transformer char predictor",
+      "spec": [
+        64,
+        3,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "small deep reasoning transformer char predictor",
+      "spec": [
+        32,
+        6,
+        8
+      ],
+      "match": 0.6666666666666666
+    },
+    {
+      "task": "compact shallow simple transformer char predictor",
+      "spec": [
+        48,
+        2,
+        4
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "wide large transformer char predictor",
+      "spec": [
+        96,
+        2,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "balanced medium transformer char predictor",
+      "spec": [
+        64,
+        3,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "efficient medium transformer char predictor",
+      "spec": [
+        48,
+        3,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "deep reasoning capacity transformer char predictor",
+      "spec": [
+        32,
+        5,
+        2
+      ],
+      "match": 0.5
+    },
+    {
+      "task": "small fast char predictor transformer",
+      "spec": [
+        32,
+        2,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "medium char predictor transformer",
+      "spec": [
+        64,
+        2,
+        8
+      ],
+      "match": 1.0
+    },
+    {
+      "task": "large transformer char predictor",
+      "spec": [
+        48,
+        4,
+        2
+      ],
+      "match": 0.0
+    }
+  ],
+  "ref_spec": [
+    48,
+    3,
+    4
+  ],
+  "ref_task": "char predictor transformer small compact efficient lightweight balanced",
+  "mlp_jepa_zero": 1.841068658431371,
+  "mlp_hybrid_ft100": 0.9901024543245633,
+  "task_tx_zero_loss": 0.3123298846930265,
+  "task_tx_zero_acc": 0.8965234375000002,
+  "random_zero_loss": 2.081065163612365,
+  "task_tx_zero_delta_vs_random": 1.7687352789193387,
+  "task_tx_ft100_loss": 0.2753225049749017,
+  "task_tx_ft100_delta_vs_random": 0.22383281648159026,
+  "random_zero_acc": 0.11773437499999997,
+  "random_zero_delta_vs_random": 0.0,
+  "random_ft100_loss": 0.49915532145649194,
+  "random_ft100_delta_vs_random": 0.0,
+  "jepa_zero_loss": 2.064365470409393,
+  "jepa_zero_acc": 0.20453124999999997,
+  "jepa_zero_delta_vs_random": 0.016699693202971932,
+  "jepa_ft100_loss": 0.8757095748186112,
+  "jepa_ft100_delta_vs_random": -0.3765542533621193,
+  "hybrid_zero_loss": 2.0631940594315528,
+  "hybrid_zero_acc": 0.15437499999999998,
+  "hybrid_zero_delta_vs_random": 0.01787110418081239,
+  "hybrid_ft100_loss": 0.34623768229037527,
+  "hybrid_ft100_delta_vs_random": 0.15291763916611667,
+  "tx_cond_zero_loss": 0.3372121296077967,
+  "tx_cond_zero_acc": 0.8910546874999999,
+  "tx_cond_zero_delta_vs_random": 1.7438530340045686,
+  "tx_cond_ft100_loss": 0.27551442690193645,
+  "tx_cond_ft100_delta_vs_random": 0.2236408945545555,
+  "prev_v1_zero": 1.5056663931012153,
+  "zero_gain_vs_v1": 1.0203181885778903
+}

@@ -1,0 +1,47 @@
+---
+description: Experiment scripts — run, log, and update docs after every run
+globs: "{experiments/**,scripts/**}"
+alwaysApply: false
+---
+
+# Experiment Protocol
+
+## Before running
+
+1. Read `STATE.md` — confirm current phase and intended next step
+2. Use existing scripts; don't create one-off duplicates
+3. Note seed, hyperparameters, and expected success metric
+
+## Standard commands
+
+```bash
+# Phase 0
+python experiments/phase0_train_baselines.py --num_seeds 10 --steps 500
+python scripts/collect_weights.py --num_models 50 --steps 500
+
+# Phase 1
+python experiments/phase1_weight_diffusion.py --weights checkpoints/weights/phase0/weights.pt
+```
+
+## After every experiment
+
+1. **Log to `EXPERIMENTS.md`** — date, phase, script, seed, key metrics, outcome, artifacts path
+2. **Update `STATE.md`** — current phase, key results, open questions, immediate next steps
+3. **Artifacts** — plots in `checkpoints/plots/`, runs in `checkpoints/logs/runs.jsonl`
+
+## Success metrics (Phase 1)
+
+Compare generated vs random init on same eval protocol:
+
+- `generated_zero_shot_loss` vs `random_zero_shot_loss` (lower is better)
+- Optional: after `--eval_steps` fine-tune, compare FT losses
+- Positive delta = generated better than random
+
+## Smoke vs full runs
+
+| Run type | num_models | diffusion_steps | Purpose |
+|----------|------------|-----------------|---------|
+| Smoke | 3–10 | 500 | Pipeline sanity check |
+| Full | 50+ | 2000 | Phase 1 success criteria |
+
+Document which type was run in `EXPERIMENTS.md`.

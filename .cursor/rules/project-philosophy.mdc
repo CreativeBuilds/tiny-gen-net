@@ -1,0 +1,40 @@
+---
+description: Core research philosophy — Karpathy-style incremental provable development
+alwaysApply: true
+---
+
+# tiny-gen-net Philosophy
+
+This is an **educational research codebase**, not a production app. Follow Andrej Karpathy-style development (nanoGPT / micrograd / makemore).
+
+## Non-negotiables
+
+1. **Start tiny, prove, then scale** — Few thousand to ~50k params max in early phases. Synthetic/small data. Fast experiments.
+2. **One meaningful increment per session** — Don't jump phases. Phase 1 must beat random init before Phase 2.
+3. **Measurable success signals** — Loss curves, vs-random baselines, reproducible seeds. No "looks good" without numbers.
+4. **Minimal code** — Prefer single-file or few files. Avoid abstractions until the third repetition.
+5. **Visualize** — Save plots to `checkpoints/plots/`. Log runs to `checkpoints/logs/runs.jsonl`.
+6. **Update living docs** — After every experiment: `STATE.md` + `EXPERIMENTS.md`.
+
+## Source of truth (read before acting)
+
+| File | Purpose |
+|------|---------|
+| `STATE.md` | Current phase, what exists, next steps |
+| `EXPERIMENTS.md` | What was run, metrics, outcomes |
+| `VISION.md` | Long-term roadmap |
+| `RULES.md` | Human-readable dev rules |
+| `COMMANDS.md` | CLI reference |
+
+## Phase gates
+
+- **Phase 0** → baselines train reliably; weights collected
+- **Phase 1** → diffusion samples beat random init (zero-shot or brief FT)
+- **Phase 2+** → blocked until Phase 1 success is documented
+
+## What NOT to do early
+
+- No JEPA (`src/jepa/`) until Phase 1 signal exists
+- No architecture generation (`src/arch_gen/`) until Phase 2 explored
+- No Hydra, W&B, or heavy infra — keep deps in `requirements.txt` minimal
+- No scaling hidden dim or dataset before baselines are solid

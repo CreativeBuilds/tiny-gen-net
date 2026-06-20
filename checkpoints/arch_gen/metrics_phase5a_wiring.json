@@ -1,0 +1,14 @@
+{
+  "metrics": {
+    "smoke_wiring": true,
+    "shakespeare_vocab": 65,
+    "sample_spec": [
+      128,
+      4,
+      4,
+      128
+    ],
+    "random_eval_loss": 3.4675817489624023,
+    "grid_size": 96
+  }
+}

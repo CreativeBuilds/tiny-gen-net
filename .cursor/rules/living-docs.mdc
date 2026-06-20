@@ -1,0 +1,39 @@
+---
+description: Always update STATE.md and EXPERIMENTS.md when changing project progress
+alwaysApply: true
+---
+
+# Living Documentation
+
+When you implement code, run experiments, or advance a phase:
+
+## STATE.md (required)
+
+Update these sections:
+- **Current Phase** — e.g. "Phase 0 complete → Phase 1 in progress"
+- **Key Results** — latest metrics with run config (N models, steps, seed)
+- **Open Questions** — new findings or unresolved issues
+- **Immediate Next Steps** — concrete single next action
+
+## EXPERIMENTS.md (required after runs)
+
+Append a new entry using the template at top of file:
+
+```markdown
+### YYYY-MM-DD — [Phase N] Short title
+| Field | Value |
+| **Phase** | ... |
+| **Script** | `experiments/...` |
+| **Key metrics** | ... |
+| **Outcome** | success / inconclusive / failed |
+```
+
+## When NOT to edit
+
+- Don't rewrite `VISION.md` or `RULES.md` unless scope/philosophy changed
+- Don't duplicate CLI docs — point to `COMMANDS.md`
+
+## Cross-reference
+
+Human docs: `RULES.md`, `VISION.md`, `README.md`
+Agent docs: `.cursor/skills/continue/SKILL.md`, this rules folder

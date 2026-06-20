@@ -1,0 +1,36 @@
+{
+  "tag": "phase3_v1",
+  "num_samples": 30,
+  "arch_train_steps": 500,
+  "final_arch_train_loss": 0.7706646919250488,
+  "jepa_compatible_count": 1,
+  "unique_arch_specs": 9,
+  "hidden_dim_dist": {
+    "32": 10,
+    "128": 4,
+    "96": 3,
+    "48": 9,
+    "64": 4
+  },
+  "depth_dist": {
+    "1": 7,
+    "2": 23
+  },
+  "gen_zero_loss": 2.069086065888405,
+  "gen_zero_acc": 0.1641927083333333,
+  "random_zero_loss": 2.079468759695689,
+  "gen_zero_delta_vs_random": 0.01038269380728396,
+  "gen_ft100_loss": 1.3699094246824584,
+  "gen_ft100_delta_vs_random": -0.15115751177072556,
+  "ref_random_zero_loss": 2.079286789894104,
+  "ref_random_zero_acc": 0.20625,
+  "ref_random_zero_delta_vs_random": 0.00018196980158480258,
+  "ref_random_ft100_loss": 1.244490146636963,
+  "ref_random_ft100_delta_vs_random": -0.025738233725230097,
+  "ref_hybrid_zero_loss": 1.7411536991596221,
+  "ref_hybrid_zero_acc": 0.22890625,
+  "ref_hybrid_zero_delta_vs_random": 0.33831506053606675,
+  "ref_hybrid_ft100_loss": 0.9448739647865295,
+  "ref_hybrid_ft100_delta_vs_random": 0.2738779481252033,
+  "gen_minus_ref_hybrid_ft100": -0.42503545989592884
+}

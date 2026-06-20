@@ -1,0 +1,22 @@
+{
+  "tag": "phase2_global",
+  "train_steps": 2000,
+  "final_train_loss": 14.519875526428223,
+  "jepa_zero_loss": 1.841068658431371,
+  "jepa_zero_acc": 0.24562500000000004,
+  "random_zero_loss": 2.079462188482285,
+  "jepa_zero_delta_vs_random": 0.2383935300509139,
+  "jepa_ft100_loss": 1.0120616845289867,
+  "jepa_ft100_delta_vs_random": 0.2083594185113904,
+  "jepa_ft200_loss": 0.8749731949965157,
+  "jepa_ft200_delta_vs_random": 0.09267818659544003,
+  "diffusion_zero_loss": 7.014868740638097,
+  "diffusion_zero_acc": 0.11458333333333334,
+  "diffusion_zero_delta_vs_random": -4.935406552155813,
+  "diffusion_ft100_loss": 0.8746072947978972,
+  "diffusion_ft100_delta_vs_random": 0.34581380824247987,
+  "diffusion_ft200_loss": 0.8411748793721201,
+  "diffusion_ft200_delta_vs_random": 0.12647650221983564,
+  "jepa_minus_diffusion_ft100": -0.13745438973108948,
+  "jepa_minus_diffusion_ft200": -0.033798315624395614
+}

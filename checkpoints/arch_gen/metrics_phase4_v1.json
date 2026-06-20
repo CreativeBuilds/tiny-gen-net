@@ -1,0 +1,160 @@
+{
+  "tag": "phase4_v1",
+  "num_tasks": 10,
+  "avg_task_match": 0.7333333333333333,
+  "examples": [
+    {
+      "task": "small shallow simple char predictor",
+      "spec": [
+        48,
+        2,
+        false
+      ],
+      "match": 0.6666666666666666,
+      "uncond_spec": [
+        32,
+        3,
+        false
+      ]
+    },
+    {
+      "task": "small efficient char predictor",
+      "spec": [
+        64,
+        2,
+        false
+      ],
+      "match": 0.0,
+      "uncond_spec": [
+        32,
+        3,
+        false
+      ]
+    },
+    {
+      "task": "large deep skip char predictor",
+      "spec": [
+        96,
+        3,
+        false
+      ],
+      "match": 0.6666666666666666,
+      "uncond_spec": [
+        48,
+        3,
+        false
+      ]
+    },
+    {
+      "task": "large wide char predictor",
+      "spec": [
+        128,
+        2,
+        true
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        64,
+        2,
+        true
+      ]
+    },
+    {
+      "task": "medium balanced char predictor",
+      "spec": [
+        64,
+        2,
+        true
+      ],
+      "match": 0.0,
+      "uncond_spec": [
+        48,
+        2,
+        false
+      ]
+    },
+    {
+      "task": "deep balanced char predictor",
+      "spec": [
+        64,
+        3,
+        true
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        128,
+        2,
+        true
+      ]
+    },
+    {
+      "task": "shallow fast char predictor",
+      "spec": [
+        48,
+        1,
+        false
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        48,
+        3,
+        true
+      ]
+    },
+    {
+      "task": "small narrow char predictor",
+      "spec": [
+        24,
+        3,
+        false
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        64,
+        3,
+        false
+      ]
+    },
+    {
+      "task": "large deep char predictor",
+      "spec": [
+        128,
+        3,
+        false
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        64,
+        2,
+        false
+      ]
+    },
+    {
+      "task": "medium simple char predictor",
+      "spec": [
+        64,
+        1,
+        false
+      ],
+      "match": 1.0,
+      "uncond_spec": [
+        160,
+        1,
+        false
+      ]
+    }
+  ],
+  "prev_phase3_zero": 1.7085441023111343,
+  "task_zero_loss": 1.693004665374756,
+  "task_zero_acc": 0.292109375,
+  "random_zero_loss": 2.079487475156784,
+  "task_zero_delta_vs_random": 0.3864828097820281,
+  "task_ft100_loss": 1.0829737016558647,
+  "task_ft100_delta_vs_random": 0.13270193964242938,
+  "uncond_zero_loss": 1.662974339127541,
+  "uncond_zero_acc": 0.272890625,
+  "uncond_zero_delta_vs_random": 0.4165131360292431,
+  "uncond_ft100_loss": 1.0766717737913134,
+  "uncond_ft100_delta_vs_random": 0.13900386750698068,
+  "task_minus_uncond_zero": -0.030030326247215022
+}
