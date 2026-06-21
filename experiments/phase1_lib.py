@@ -21,15 +21,15 @@ from src.utils.weights import (
 )
 
 
-def eval_flat(flat: torch.Tensor, hidden: int, device: str, ft_steps: list[int], seed: int) -> dict:
-    m = TinyMLP(hidden_dim=hidden).to(device)
+def eval_flat(flat: torch.Tensor, hidden: int, device: str, ft_steps: list[int], seed: int, model_factory=None) -> dict:
+    m = (model_factory() if model_factory else TinyMLP(hidden_dim=hidden)).to(device)
     load_flat_into_model(flat, m)
     out = {}
     z = eval_model_loss(m, seed=seed, device=device)
     out["zero_loss"], out["zero_acc"] = z["eval_loss"], z["eval_acc"]
     for n in ft_steps:
         if n <= 0: continue
-        mc = TinyMLP(hidden_dim=hidden).to(device)
+        mc = (model_factory() if model_factory else TinyMLP(hidden_dim=hidden)).to(device)
         load_flat_into_model(flat, mc)
         curve = finetune_steps(mc, n, seed=seed, device=device)
         a = eval_model_loss(mc, seed=seed, device=device)
@@ -58,6 +58,7 @@ def run_phase1_experiment(
     seed: int = 42,
     plot_dir: str | Path = "checkpoints/plots",
     device: str | None = None,
+    model_factory=None,
 ) -> dict:
     """Train diffusion on normalized weights, sample, eval vs random/collected. Returns metrics dict."""
     ft_steps = ft_steps or [100, 200]
@@ -85,7 +86,7 @@ def run_phase1_experiment(
     diff.model.eval()
     sampled_raw = denormalize_weights(diff.sample(n=num_samples).cpu(), norm_meta)
     collected_raw = denormalize_weights(weights_norm, norm_meta)
-    random_rows = torch.stack([flatten_state_dict(TinyMLP(hidden_dim=hidden)) for _ in range(num_samples)])
+    random_rows = torch.stack([flatten_state_dict((model_factory() if model_factory else TinyMLP(hidden_dim=hidden))) for _ in range(num_samples)])
     plot_weight_histograms(
         {"collected": collected_raw, "sampled": sampled_raw, "random_init": random_rows},
         out_path=plot_dir / f"{tag}_weight_hist.png",
@@ -96,11 +97,11 @@ def run_phase1_experiment(
     col_idx = list(range(weights_norm.shape[0] - n_col, weights_norm.shape[0]))
     gen_rows, rnd_rows, col_rows = [], [], []
     for i in range(num_samples):
-        gen_rows.append(eval_flat(sampled_raw[i], hidden, device, ft_steps, seed + i))
+        gen_rows.append(eval_flat(sampled_raw[i], hidden, device, ft_steps, seed + i, model_factory=model_factory))
         set_seed(1000 + i)
-        rnd_rows.append(eval_flat(random_rows[i], hidden, device, ft_steps, seed + i))
+        rnd_rows.append(eval_flat(random_rows[i], hidden, device, ft_steps, seed + i, model_factory=model_factory))
     for j, ci in enumerate(col_idx):
-        col_rows.append(eval_flat(collected_raw[ci], hidden, device, ft_steps, seed + 10000 + j))
+        col_rows.append(eval_flat(collected_raw[ci], hidden, device, ft_steps, seed + 10000 + j, model_factory=model_factory))
 
     metrics = {
         "tag": tag,

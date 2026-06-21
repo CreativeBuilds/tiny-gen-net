@@ -34,6 +34,19 @@ from src.utils.weights import dataset_variance, load_raw_weights, normalize_weig
 from experiments.phase1_lib import run_phase1_experiment
 
 
+def _make_model_factory(hidden: int, depth: int):
+    """Returns a factory that creates the right model for the given depth."""
+    if depth <= 1:
+        from src.models.tiny_mlp import TinyMLP
+        return lambda: TinyMLP(hidden_dim=hidden)
+    else:
+        from src.arch_gen.spec import ArchSpec  # noqa: F401 — forces package init
+        from src.models.variable_mlp import VariableTinyMLP
+        from data.synthetic_text import VOCAB_SIZE
+        spec = ArchSpec(hidden, depth, skip=False)
+        return lambda: VariableTinyMLP(spec, vocab_size=VOCAB_SIZE)
+
+
 def _agg(rows: list[dict], key: str) -> tuple[float, float]:
     vals = [r[key] for r in rows]
     mean = statistics.fmean(vals)
@@ -45,6 +58,7 @@ def run_align_ablation(
     raw_path: str,
     *,
     hidden: int,
+    depth: int = 1,
     norm: str = "perdim",
     method: str = "weight_match",
     align_iters: int = 3,
@@ -62,15 +76,18 @@ def run_align_ablation(
     if "layer_slices" not in meta:
         raise SystemExit(f"meta.json missing layer_slices at {meta_path}; re-run collect_weights.py")
     H = hidden or meta.get("hidden_dim", 64)
+    d = depth or meta.get("depth", 1)
     slices = [tuple(x) for x in meta["layer_slices"]]
 
+    model_factory = _make_model_factory(H, d)
+
     raw = load_raw_weights(rp)
-    print(f"Loaded raw weights {tuple(raw.shape)} | hidden={H} | norm={norm} | method={method}")
+    print(f"Loaded raw weights {tuple(raw.shape)} | hidden={H} | depth={d} | norm={norm} | method={method}")
 
     # --- alignment (GATE 0 enforced inside) ---
-    aligned, info = align_collection(raw, meta, H, method=method, iters=align_iters, verify=True)
+    aligned, info = align_collection(raw, meta, H, d, model_factory, method=method, iters=align_iters, verify=True)
     fn_diff = info["function_preservation_max_diff"]
-    print(f"GATE 0 function-preservation max abs logit diff: {fn_diff:.3e} (must be < 1e-5)")
+    print(f"GATE 0 function-preservation max abs logit diff: {fn_diff:.3e} (must be < 1e-4)")
 
     var_raw = dataset_variance(raw)
     var_aln = dataset_variance(aligned)
@@ -96,6 +113,7 @@ def run_align_ablation(
                 ft_steps=list(ft_steps),
                 seed=s,
                 plot_dir=plot_dir,
+                model_factory=model_factory,
             )
             results[arm].append(m)
             print(
@@ -187,6 +205,7 @@ def main():
     p = argparse.ArgumentParser(description="Alignment ablation (raw vs Git Re-Basin aligned)")
     p.add_argument("--weights", type=str, required=True, help="weights_raw.pt (raw, un-normalized)")
     p.add_argument("--hidden", type=int, default=64)
+    p.add_argument("--depth", type=int, default=1, help="Model depth (1=TinyMLP, >1=VariableTinyMLP)")
     p.add_argument("--norm", type=str, default="perdim", choices=["global", "layer", "perdim"])
     p.add_argument("--method", type=str, default="weight_match", choices=["weight_match", "canonical_sort"])
     p.add_argument("--align_iters", type=int, default=3)
@@ -205,6 +224,7 @@ def main():
     run_align_ablation(
         args.weights,
         hidden=args.hidden,
+        depth=args.depth,
         norm=args.norm,
         method=args.method,
         align_iters=args.align_iters,
