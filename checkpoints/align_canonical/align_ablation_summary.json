@@ -1,0 +1,40 @@
+{
+  "raw_weights_path": "checkpoints/weights/align_pool/weights_raw.pt",
+  "hidden": 64,
+  "norm": "perdim",
+  "method": "canonical_sort",
+  "align_iters": 3,
+  "n_seeds": 5,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "diffusion_steps": 2000,
+  "num_samples": 30,
+  "ft_steps": [
+    100
+  ],
+  "function_preservation_max_diff": 4.76837158203125e-06,
+  "dataset_variance": {
+    "raw": 0.016256270930171013,
+    "aligned": 0.015854818746447563,
+    "ratio": 0.975304780201567,
+    "raw_mean_pairwise_l2": 17.4659423828125,
+    "aligned_mean_pairwise_l2": 17.241777420043945
+  },
+  "raw": {
+    "zero_delta_mean": -11.192286697626113,
+    "zero_delta_std": 0.4989051013095579,
+    "ft100_delta_mean": 0.24217408831914247,
+    "ft100_delta_std": 0.04949391443015171
+  },
+  "aligned": {
+    "zero_delta_mean": -9.799753218571345,
+    "zero_delta_std": 0.9158719729136683,
+    "ft100_delta_mean": 0.2401467141906421,
+    "ft100_delta_std": 0.03473959035361692
+  }
+}
