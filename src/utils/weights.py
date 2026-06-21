@@ -105,6 +105,30 @@ def norm_meta_to_tensors(meta: dict) -> dict:
     return out
 
 
+def dataset_variance(weights: torch.Tensor) -> dict:
+    """Spread of a (N, D) weight collection across models.
+
+    total_var: mean over dims of the per-dim variance across the N models
+               (how much the dataset moves per coordinate). Lower after a good
+               symmetry alignment if permutation slop was a real noise source.
+    mean_pairwise_l2: mean L2 distance between distinct model pairs (estimated
+               on up to 64 models to stay cheap).
+    """
+    w = weights.float()
+    n = w.shape[0]
+    per_dim_var = w.var(dim=0, unbiased=False)
+    total_var = per_dim_var.mean().item()
+    m = min(n, 64)
+    sub = w[:m]
+    d = torch.cdist(sub, sub)
+    if m > 1:
+        mask = ~torch.eye(m, dtype=torch.bool)
+        mean_pairwise_l2 = d[mask].mean().item()
+    else:
+        mean_pairwise_l2 = 0.0
+    return {"total_var": total_var, "mean_pairwise_l2": mean_pairwise_l2, "num_models": n}
+
+
 def save_weight_collection(weights: torch.Tensor, meta: dict, out_dir: str | Path, filename: str = "weights.pt"):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
