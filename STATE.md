@@ -1,68 +1,52 @@
 # Project State — tiny-gen-net
 
-*Last updated: 2026-06-19*
+*Last updated: 2026-06-20*
 
 ## Current Phase
 
-**Phase 5a — real text + sentence embeddings + nanoGPT scale (cloud-first)**
+**Phase 5c — fine aux sweep failed; mid remains best strong_plan balance**
 
-Pipeline implemented: Tiny Shakespeare char corpus, frozen `all-MiniLM-L6-v2` task embeddings, `NanoTransformer` (1M–10M params), sub-chunk weight hypernet, RunPod scripts. **Full training runs on RunPod only** — local `--smoke` is a ~2 min wiring check.
+`phase5c_fine` (jepa=0.11, cons=0.20) landed in-grid near neutral (−0.017) but extrap collapsed (−0.623). Aux tuning between light and mid is **not** monotonic — `mid` still best balanced strong_plan config.
 
-## Phase 5a Status
+## Phase 5c Variant Comparison (H100)
+
+| Variant | Warm-start | Loss profile | Planning | In-grid Δ | Extrap Δ |
+|---------|------------|--------------|----------|-----------|----------|
+| v1 | ❌ | v1 cosine | default | −0.17 | −0.065 |
+| v2 refine | ✅ | strong aux | h-inject | −0.89 | −0.11 |
+| ws ablation | ✅ | v1 cosine | default | −0.41 | **−0.023** |
+| **light** | ✅ | jepa=0.1, cons=0.15 | **strong_plan** | **+0.042** | −0.149 |
+| **fine** | ✅ | jepa=0.11, cons=0.20 | **strong_plan** | −0.017 | −0.623 |
+| **mid** | ✅ | jepa=0.12, cons=0.25 | **strong_plan** | −0.072 | **−0.115** |
+| light-noplan | ✅ | jepa=0.1, cons=0.15 | default | −0.69 | −0.214 |
+| hybrid | ✅ | jepa=0.15, cons=0.35 | **strong_plan** | −0.029 | −0.564 |
+
+Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
+
+## Phase 5c Status
 
 | Item | Status |
 |------|--------|
-| `data/shakespeare.py` | ✅ Tiny Shakespeare download + char tokenizer |
-| `sentence_embedder.py` | ✅ Frozen MiniLM (384-d) |
-| `nano_transformer.py` + `nano_spec.py` | ✅ 96 valid specs, presets smoke/1m/3m/8m |
-| Sub-chunk weight gen | ✅ (required for 1M+ params; slow on MPS) |
-| RunPod scripts | ✅ `runpod_launch/train/smoke/pull/stop/gpus.sh` — **default H100 SXM** |
-| Local smoke (wiring) | ✅ ~2 min |
-| **Cloud full run** | ✅ 2026-06-20 — task-nano **Δ +0.73** vs random (Shakespeare) |
+| Beat random in-grid | ✅ **+0.042** (`phase5c_light` only) |
+| Beat random extrap | ❌ best: ws ablation −0.023 |
+| Best strong_plan balance | ✅ **mid** (fine sweep rejected) |
+| Fine sweep (light↔mid) | ❌ failed — extrap collapse |
 
-### Early smoke metrics (incomplete training, 3 collect × 150 steps)
+## Key Results (phase5c_fine, seed 42, H100)
 
-From accidental long local run (`metrics_phase5a_smoke.json` — **not** representative; weight-gen under-trained):
+- **In-grid zero-shot Δ:** −0.017 (vs light +0.042, mid −0.072)
+- **Extrap zero-shot Δ:** −0.623 (vs light −0.149, mid −0.115)
+- **Config:** `jepa_w=0.11`, `cons_w=0.20`, `strong_plan=True`, `plan_scale=0.1`
+- **Worst extrap preset:** nano_16m holdout CE 5.49 vs random 4.31
 
-| Init | Zero Δ vs random | Notes |
-|------|------------------|-------|
-| Task-nano | **+0.43** | Best signal despite tiny train |
-| Nano JEPA | +0.35 | Sentence-conditioned JEPA |
-| Nano cond | +0.09 | Arch-only cond |
-| Random | 4.23 | Shakespeare val CE |
+## Open Questions
 
-**Do not compare directly to Phase 4b** (synthetic char, ~100k tx). Phase 5a Shakespeare random baseline ≈4.2 CE.
+- Aux weight axis is **not** smoothly monotonic between light/mid/fine on extrap — `cons_w=0.20` may hit an unstable region.
+- `fine` in-grid near-neutral (−0.017) suggests the in-grid/extrap tradeoff is sharp, not a continuous Pareto curve.
+- Extrap gains may require anchor scale (20–30M) rather than further aux micro-tuning.
 
-## Recommended Workflow
+## Immediate Next Steps
 
-```bash
-# Local: wiring only (~10 sec)
-python experiments/phase5a_nano_text.py --smoke
-
-# Cloud: full Phase 5a on H100 SXM (~$3–8/run, default)
-./scripts/runpod_launch.sh
-RUNPOD_PULL=1 RUNPOD_STOP=1 ./scripts/runpod_train.sh --tag phase5a_v1
-
-# Cloud smoke on RTX 4090 (~$0.10–0.15)
-./scripts/runpod_smoke.sh
-
-# GPU tiers + budget: ./scripts/runpod_gpus.sh
-```
-
-## Phase 4b (previous best on synthetic tx)
-
-Task-tx ref init zero=**0.31**, FT100=**0.28**, steering match=**0.73**.
-
-## Next Steps
-
-1. **Run full Phase 5a on RunPod** (nano_1m/3m/8m presets, 2500+ collect steps)
-2. Compare task-nano vs Phase 4b on Shakespeare (not synthetic)
-3. JEPA/hybrid at nano scale once ref weights collected on GPU
-4. Hierarchy (Phase 5b) after cloud baseline established
-
-## Artifacts
-
-- `checkpoints/arch_gen/metrics_phase5a_smoke.json` (partial local run)
-- `checkpoints/weights/nano_multi_v1/weights_raw.pt` (3 smoke models)
-- `scripts/runpod_*.sh`
-- Phase 4b: `task_tx_phase4b_v2.pt`
+1. **Stop aux micro-sweeps** — light and mid bracket the useful region; fine is a dead end.
+2. Add one **20–30M warm-start anchor** on **`mid`** profile (separate ablation) — test whether larger anchor closes extrap gap vs ws ablation.
+3. Keep **`light`** as in-grid reference; use **`mid`** as strong_plan balance baseline.

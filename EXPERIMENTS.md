@@ -24,6 +24,151 @@ Copy this block for new entries:
 
 ## Experiments
 
+### 2026-06-20 — [Phase 5c] Fine aux sweep (light↔mid) + strong_plan — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `PROFILE=fine RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_fine` |
+| **Seed** | 42 |
+| **Setup** | Fine aux (`jepa_w=0.11`, `cons_w=0.20`) + `strong_plan=True`; warm 12m/16m anchors |
+| **Key metrics** | in-grid Δ=**−0.017**; extrap Δ=**−0.623** (CE ~4.90); ft100 in-grid Δ=+0.027 |
+| **Outcome** | **failed** — in-grid near neutral but extrap collapsed; not a better operating point |
+| **Notes** | vs light: in-grid +0.042→−0.017 (still close), extrap −0.149→−0.623 (much worse). vs mid: in-grid −0.072→−0.017 (better), extrap −0.115→−0.623 (catastrophic). Aux axis non-monotonic in this band; `mid` remains best strong_plan balance |
+| **Artifacts** | `metrics_phase5c_fine.json`, `prog_phase5c_fine.pt` |
+
+### 2026-06-20 — [Phase 5c] Mid aux weights + strong_plan — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `PROFILE=mid RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_mid` |
+| **Seed** | 42 |
+| **Setup** | Intermediate aux (`jepa_w=0.12`, `cons_w=0.25`) + `strong_plan=True`; warm 12m/16m anchors |
+| **Key metrics** | in-grid Δ=**−0.072**; extrap Δ=**−0.115** (CE ~4.39); ft100 in-grid Δ=−0.015 |
+| **Outcome** | **partial success** — best extrap among strong_plan variants; slight combined-balance win vs light |
+| **Notes** | vs light: extrap −0.149→−0.115 (+23%), in-grid +0.042→−0.072. vs ws ablation: extrap still worse (−0.023). \|Δ\| sum: mid 0.19 vs light 0.19 |
+| **Artifacts** | `metrics_phase5c_mid.json`, `prog_phase5c_mid.pt` |
+
+### 2026-06-20 — [Phase 5c] Hybrid (v1 aux + strong_plan) — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `PROFILE=hybrid RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_hybrid` |
+| **Seed** | 42 |
+| **Setup** | v1 aux (`jepa_w=0.15`, `cons_w=0.35`) + `strong_plan=True`, `plan_scale=0.1`; warm 12m/16m anchors |
+| **Key metrics** | in-grid Δ=**−0.029**; extrap Δ=**−0.564** (CE ~4.84); ft100 in-grid Δ=+0.038 |
+| **Outcome** | **failed** — stronger aux + strong_plan hurt both vs light; extrap worst in table |
+| **Notes** | Hypothesis rejected: v1 aux weights do not recover extrap when paired with strong_plan. Best in-grid remains `light`; best extrap remains `ws ablation` |
+| **Artifacts** | `metrics_phase5c_hybrid.json`, `prog_phase5c_hybrid.pt` |
+
+### 2026-06-20 — [Phase 5c] Light losses, no strong planning — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `PROFILE=light-noplan RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_light_noplan` |
+| **Seed** | 42 |
+| **Setup** | Same light aux as `phase5c_light` but **`strong_plan=False`** (only variable changed) |
+| **Key metrics** | in-grid Δ=**−0.69**; extrap Δ=**−0.214** (CE ~4.49) |
+| **Outcome** | **failed / hypothesis rejected** — removing strong_plan did not recover extrap; in-grid collapsed |
+| **Notes** | vs light: in-grid +0.042→−0.69, extrap −0.149→−0.214. strong_plan is required for in-grid win; extrap gap likely from lighter aux weights, not plan injection |
+| **Artifacts** | `metrics_phase5c_light_noplan.json`, `prog_phase5c_light_noplan.pt` |
+
+### 2026-06-20 — [Phase 5c] Light losses + strong planning — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `PROFILE=light RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_light` |
+| **Seed** | 42 |
+| **Setup** | Light aux (`jepa_w=0.1`, `cons_w=0.15`, cosine cons); `strong_plan=True` (scale+layer-frac+plan_mix residual in every progressive step); warm 12m/16m anchors |
+| **Key metrics** | in-grid Δ=**+0.042**; extrap Δ=**−0.149** (CE ~4.42); ft100 in-grid Δ=+0.041 |
+| **Outcome** | **partial success** — first variant beating random in-grid; extrap worse than ws ablation |
+| **Notes** | Lighter losses + direct plan conditioning fixed in-grid. Extrap regression suggests strong_plan may overfit training-scale cues. Next: ablate strong_plan with same light losses |
+| **Artifacts** | `metrics_phase5c_light.json`, `prog_phase5c_light.pt`, `checkpoints/plots/phase5c_scale/` |
+
+### 2026-06-20 — [Phase 5c] Variant comparison (H100, updated)
+
+| Variant | Warm-start | Loss profile | Planning | In-grid Δ | Extrap Δ |
+|---------|------------|--------------|----------|-----------|----------|
+| v1 | 0 tensors | v1 cosine | default | −0.17 | −0.065 |
+| v2 refine | 77–101 tensors | strong aux | h-inject | −0.89 | −0.11 |
+| ws ablation | 77–101 tensors | v1 cosine | default | −0.41 | **−0.023** |
+| **light** | 77–101 tensors | jepa=0.1, cons=0.15 | **strong_plan** | **+0.042** | −0.149 |
+| **fine** | 77–101 tensors | jepa=0.11, cons=0.20 | **strong_plan** | −0.017 | −0.623 |
+| **mid** | 77–101 tensors | jepa=0.12, cons=0.25 | **strong_plan** | −0.072 | **−0.115** |
+| light-noplan | 77–101 tensors | jepa=0.1, cons=0.15 | default | −0.69 | −0.214 |
+| hybrid | 77–101 tensors | jepa=0.15, cons=0.35 | **strong_plan** | −0.029 | −0.564 |
+
+Phase 5a task-nano baseline for reference: in-grid Δ **+0.73**.
+
+### 2026-06-20 — [Phase 5c] Warm-start-only ablation — H100
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `ABLATION=warmstart-only ./scripts/runpod_phase5c.sh` → `phase5c_ws_ablation` |
+| **Seed** | 42 |
+| **Setup** | Fixed partial warm-start (12m/16m anchors) + **v1 loss weights** (cosine cons, jepa_w=0.15, cons_w=0.35, plan_scale=0); isolates warm-start vs v2 strong losses |
+| **Key metrics** | in-grid Δ=**−0.41**; extrap Δ=**−0.023** (CE ~4.30) |
+| **Outcome** | **partial success** — best extrap so far; confirms v2 loss regression |
+| **Notes** | vs v1: extrap improved (−0.065→−0.023), in-grid worse (−0.17→−0.41). Warm-start helps holdout when reconstruction not dominated by strong aux losses |
+| **Artifacts** | `metrics_phase5c_ws_ablation.json`, `prog_phase5c_ws_ablation.pt` |
+
+### 2026-06-20 — [Phase 5c] v2 refine — H100 (strong losses)
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `RETRAIN_PROG=1 RETRAIN_ANCHORS=1 ./scripts/runpod_phase5c.sh phase5c_v2` |
+| **Seed** | 42 |
+| **Setup** | Fixed warm-start + stronger scale-consistency (align+Δ-pred) + h GRU inject + cons_w=0.5 |
+| **Key metrics** | in-grid Δ=**−0.89**; extrap Δ=**−0.11** |
+| **Outcome** | **failed** — regression vs v1 and ws ablation |
+| **Notes** | Warm-start worked (4.8M/6.4M params transferred) but aux losses hurt reconstruction |
+| **Artifacts** | `metrics_phase5c_v2.json`, `prog_phase5c_v2.pt` |
+
+### 2026-06-20 — [Phase 5c] Scale-consistency + anchors — H100 cloud
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `experiments/phase5c_scale_hierarchy.py --cloud-resume --retrain-prog --tag phase5c_v1` |
+| **Seed** | 42 |
+| **Setup** | 15 Phase 5a weights + 2 anchors (12m/16m); 1000 train steps (prog+JEPA+scale-cons); eval in-grid + holdout |
+| **Key metrics** | in-grid zero Δ=**−0.17**; extrap zero Δ=**−0.065** (CE ~4.34); vs 5b extrap Δ −26.8 |
+| **Outcome** | **partial success** — extrap no longer broken; still below random in-grid |
+| **Notes** | Anchor warm-start matched **0 tensors** (256-d donor → 384-d target); fix needed for true bootstrap |
+| **Artifacts** | `metrics_phase5c_v1.json`, `prog_phase5c_v1.pt`, `weights_with_anchors.pt` |
+
+### 2026-06-20 — [Phase 5c] Scale-consistency + block planning + anchors (smoke)
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5c |
+| **Script** | `experiments/phase5c_scale_hierarchy.py --smoke` |
+| **Seed** | 42 |
+| **Setup** | ScaleAwareProgressiveTrainer (prog + JEPA + cosine scale-consistency); block_plan MLP; global h in every sub-chunk decode; anchor warm-start helper |
+| **Key metrics** | 60 train steps ~8 it/s MPS; total loss wiring OK |
+| **Outcome** | **infrastructure success** — H100 cloud run next |
+| **Notes** | Fixes layer_latent device for MPS; `--collect-anchors` adds 12m/16m warm-start on cloud |
+| **Artifacts** | `src/nano_warmstart.py`, `prog_phase5c_smoke.pt`, `checkpoints/plots/phase5c_scale/` |
+
+### 2026-06-20 — [Phase 5b] Hierarchical progressive — H100 full run
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5b |
+| **Script** | `experiments/phase5b_hierarchical_progressive.py --cloud-resume --tag phase5b_v1` |
+| **Seed** | 42 |
+| **Setup** | 15 Phase 5a weights; 800 prog steps; eval in-grid (1m–8m) + holdout (12m/16m/30m) |
+| **Key metrics** | in-grid zero Δ=**−0.22**; extrap zero Δ=**−26.8** (CE ~31); random CE≈4.28 |
+| **Outcome** | **failed** (negative signal — scaffolding insufficient) |
+| **Notes** | Fixed batch-dim + `logical_layer_bounds` double-count bug before final run; confirms need for 5c |
+| **Artifacts** | `metrics_phase5b_v1.json`, `prog_phase5b_v1.pt` |
+
 ### 2026-06-19 — [Phase 5a] Real text + sentence embeddings + nano scale (cloud-first)
 
 | Field | Value |
@@ -36,6 +181,21 @@ Copy this block for new entries:
 | **Outcome** | **infrastructure success** — pipeline wired; full run pending on RunPod |
 | **Notes** | Local weight-gen training is 30+ min on MPS; use `--smoke` locally, `--cloud` on RunPod |
 | **Artifacts** | `scripts/runpod_*.sh`, `metrics_phase5a_smoke.json`, `checkpoints/weights/nano_multi_v1/` |
+
+### 2026-06-20 — [Phase 5b] Hierarchical progressive generator (smoke)
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 5b |
+| **Script** | `experiments/phase5b_hierarchical_progressive.py --smoke` |
+| **Seed** | 42 |
+| **Setup** | ScaleEmbedding + HighLevelScaleJEPA + ProgressiveWeightGenerator; nano_spec grid to 256M; 2 collect + 40 prog steps |
+| **Key metrics** | wiring OK; prog train ~5 it/s MPS |
+| **Outcome** | **infrastructure success** — full H100 run pending |
+| **Notes** | Reuses Phase 5a flat hypernet path for comparison; progressive path for extrapolation eval on 12m/16m/30m holdouts |
+| **Artifacts** | `src/hierarchical_jepa.py`, `src/progressive_generator.py`, `prog_phase5b_smoke.pt` |
+
+---
 
 ### 2026-06-20 — [Phase 5a] Cloud resume — Shakespeare H100
 

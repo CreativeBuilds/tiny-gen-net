@@ -1,0 +1,100 @@
+{
+  "metrics": {
+    "prog_in_zero_loss": 5.1264871994654335,
+    "prog_in_zero_acc": 0.007712809244791667,
+    "random_zero_loss": 4.275263873736064,
+    "prog_in_zero_delta_vs_random": -0.8945430994033812,
+    "prog_in_ft100_loss": 2.9809374928474424,
+    "prog_in_ft100_delta_vs_random": -0.3758517146110534,
+    "prog_extrap_zero_loss": 4.386221837997436,
+    "prog_extrap_zero_acc": 0.020985921223958332,
+    "prog_extrap_zero_delta_vs_random": -0.11095796426137206,
+    "prog_extrap_ft100_loss": 2.8605658451716103,
+    "prog_extrap_ft100_delta_vs_random": -0.1946764270464576,
+    "random_zero": 4.206535840034485,
+    "collect_n": 17,
+    "anchors": true,
+    "retrain_anchors": true,
+    "holdout": [
+      "nano_12m",
+      "nano_16m",
+      "nano_30m"
+    ],
+    "cloud": true,
+    "smoke": false
+  },
+  "examples": [
+    {
+      "spec": [
+        128,
+        6,
+        4,
+        128
+      ],
+      "preset_params": 1222656,
+      "zero_loss": 6.792439317703247,
+      "random_zero": 4.206535840034485,
+      "extrapolation": false
+    },
+    {
+      "spec": [
+        256,
+        4,
+        8,
+        128
+      ],
+      "preset_params": 3225088,
+      "zero_loss": 4.311580777168274,
+      "random_zero": 4.219647288322449,
+      "extrapolation": false
+    },
+    {
+      "spec": [
+        256,
+        8,
+        8,
+        256
+      ],
+      "preset_params": 6416896,
+      "zero_loss": 4.27544150352478,
+      "random_zero": 4.269649171829224,
+      "extrapolation": false
+    },
+    {
+      "spec": [
+        384,
+        6,
+        8,
+        256
+      ],
+      "preset_params": 10795008,
+      "zero_loss": 4.4529846668243405,
+      "random_zero": 4.2194477081298825,
+      "extrapolation": true
+    },
+    {
+      "spec": [
+        384,
+        8,
+        16,
+        256
+      ],
+      "preset_params": 14343936,
+      "zero_loss": 4.3649101734161375,
+      "random_zero": 4.308609080314636,
+      "extrapolation": true
+    },
+    {
+      "spec": [
+        512,
+        12,
+        16,
+        256
+      ],
+      "preset_params": 38026240,
+      "zero_loss": 4.340770673751831,
+      "random_zero": 4.2977348327636715,
+      "extrapolation": true
+    }
+  ]
+}

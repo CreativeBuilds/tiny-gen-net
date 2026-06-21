@@ -45,11 +45,11 @@ Fixed-arch path (specialists):
 - ✅ **4b tiny transformer** — decoder-only tx; task-tx ref init zero=**0.31**, FT100=**0.28**
 - ✅ **4b refine** — tx steering match **0.73**; fixed-ref init comparison (task-tx > tx-JEPA)
 
-### Phase 5 — real text + scale (in progress)
+### Phase 5 — real text + scale
 
-- **5a** — Shakespeare + sentence embeddings + nanoGPT (1M–10M); **train on RunPod**
-- 5b — hierarchy / multi-scale at nano scale
-- 5c — 30M+ params if cloud baseline succeeds
+- ✅ **5a** — Shakespeare + sentence embeddings + nanoGPT (1M–10M); task-nano Δ **+0.73** on H100
+- ✅ **5b** — hierarchical progressive scaffold measured; **negative** (in-grid −0.22 Δ, extrap broken)
+- **5c** — scale-consistency + block planning + 12m/16m anchor warm-start; target extrap gap
 
 ---
 

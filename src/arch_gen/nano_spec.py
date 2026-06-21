@@ -1,13 +1,14 @@
-"""NanoGPT-scale architecture spec (1M–10M params, ctx 128–256)."""
+"""NanoGPT-scale architecture spec (500k–256M params). Supports continuous scale features."""
 
+import math
 from dataclasses import dataclass
 
-N_EMBD_CHOICES = (128, 192, 256, 384)
-N_LAYER_CHOICES = (4, 6, 8, 10, 12)
+N_EMBD_CHOICES = (128, 192, 256, 384, 512, 768)
+N_LAYER_CHOICES = (4, 6, 8, 10, 12, 16, 24)
 N_HEAD_CHOICES = (4, 8, 16)
 BLOCK_SIZE_CHOICES = (128, 256)
 MIN_NANO_PARAMS = 500_000
-MAX_NANO_PARAMS = 10_000_000
+MAX_NANO_PARAMS = 256_000_000
 REF_N_EMBD, REF_N_LAYER, REF_N_HEAD, REF_BLOCK = 256, 4, 8, 128
 
 TOK_BOS, TOK_EOS = 0, 1
@@ -26,6 +27,10 @@ PRESETS = {
     "nano_1m": (128, 6, 4, 128),
     "nano_3m": (256, 4, 8, 128),
     "nano_8m": (256, 8, 8, 256),
+    "nano_12m": (384, 6, 8, 256),
+    "nano_16m": (384, 8, 16, 256),
+    "nano_30m": (512, 12, 16, 256),
+    "nano_100m": (768, 16, 16, 256),
 }
 
 
@@ -70,6 +75,12 @@ class NanoSpec:
     def from_label(label: list) -> "NanoSpec":
         return NanoSpec(label[0], label[1], label[2], label[3] if len(label) > 3 else 128).validate()
 
+    def param_count(self, vocab: int = 65) -> int:
+        return estimate_nano_params(self.n_embd, self.n_layer, self.n_head, vocab, self.block_size)
+
+    def log_params(self, vocab: int = 65) -> float:
+        return math.log10(max(self.param_count(vocab), 1))
+
     def diagram(self) -> str:
         p = estimate_nano_params(self.n_embd, self.n_layer, self.n_head, block_size=self.block_size)
         return "\n".join([f"NanoSpec(d={self.n_embd}, L={self.n_layer}, H={self.n_head}, ctx={self.block_size})",
@@ -92,6 +103,19 @@ def all_valid_nano_specs() -> list[NanoSpec]:
 
 def random_nano_spec(rng) -> NanoSpec:
     return rng.choice(all_valid_nano_specs())
+
+
+def extrapolation_holdout_presets() -> list[str]:
+    """Larger presets for OOD extrapolation eval (may exceed training grid)."""
+    return ["nano_12m", "nano_16m", "nano_30m"]
+
+
+def anchor_presets() -> list[str]:
+    return ["nano_12m", "nano_16m"]
+
+
+def training_presets() -> list[str]:
+    return ["nano_1m", "nano_3m", "nano_8m"]
 
 
 def pick_diverse_nano_specs(n: int, rng) -> list[NanoSpec]:

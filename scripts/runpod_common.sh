@@ -142,6 +142,8 @@ EOF
 }
 
 runpod_remote_train() {
+  local script="experiments/phase5a_nano_text.py"
+  if [[ "${1:-}" == experiments/*.py ]]; then script="$1"; shift; fi
   local extra="${*:-}"
   local pod_id="$(runpod_pod_id)"
   [[ -z "$pod_id" ]] && { echo "No pod id"; return 1; }
@@ -151,7 +153,7 @@ runpod_remote_train() {
   [[ -n "$ssh_cmd" ]] || { echo "Could not resolve ssh_command for $pod_id"; return 1; }
   mkdir -p "$RUNPOD_LOG_DIR"
   local log="$RUNPOD_LOG_DIR/train_$(date +%Y%m%d_%H%M%S).log"
-  echo "Training on pod (log: $log)..."
+  echo "Training on pod (log: $log) script=$script ..."
   tee "$log" < <(
     eval "$ssh_cmd" bash -s <<EOF
 set -euo pipefail
@@ -159,7 +161,7 @@ cd $RUNPOD_REMOTE
 pip3 install -q -r requirements-cloud.txt
 python3 -c "import torch; assert torch.cuda.is_available(), f'CUDA unavailable (torch={torch.__version__})'; print(f'GPU OK: {torch.cuda.get_device_name(0)} torch={torch.__version__}')"
 export PYTHONUNBUFFERED=1
-exec python3 -u experiments/phase5a_nano_text.py $extra
+exec python3 -u $script $extra
 EOF
   )
 }

@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Full Phase 5a on RunPod. Auto-sync, train, optional pull + stop.
-# Usage:
-#   ./scripts/runpod_launch.sh
-#   ./scripts/runpod_train.sh --tag phase5a_v1
-#   RUNPOD_STOP=1 RUNPOD_PULL=1 ./scripts/runpod_train.sh --tag phase5a_v1
+# RunPod train. First arg may be experiment script path.
+#   ./scripts/runpod_train.sh --cloud-first --tag phase5a_v1
+#   ./scripts/runpod_train.sh experiments/phase5b_hierarchical_progressive.py --cloud-resume --tag phase5b_v1
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/runpod_common.sh
