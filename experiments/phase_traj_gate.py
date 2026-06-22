@@ -175,38 +175,51 @@ def run_traj_gate(
     W_raw, b_raw = _ridge(pc_X_raw, pc_Y_raw, ridge_alpha)
 
     # --- Evaluate on test trajectories ---
-    arms = ["identity", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]
+    arms = ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]
     results = {arm: [] for arm in arms}
+    per_t: dict[int, dict[str, list[float]]] = {}
 
     print(f"\nEvaluating {len(test_idx)} test trajectories × {max_t + 1} t-values...")
     for idx_i, i in enumerate(test_idx):
         for t in range(max_t + 1):
             w_t = trajs[i, t]
             w_t_aln = aligned[i, t]
+            w_future = trajs[i, t + n_ckpts_ahead]
             eval_seed = seed + int(i) * 100 + t
 
             # (a) identity — use current weights (baseline)
-            results["identity"].append(eval_weights(w_t, factory, device, eval_seed))
+            ce_id = eval_weights(w_t, factory, device, eval_seed)
+            results["identity"].append(ce_id)
 
-            # (b) avg velocity aligned
+            # (b) actual_future — THE CEILING: evaluate actual w_{t+n}
+            ce_af = eval_weights(w_future, factory, device, eval_seed)
+            results["actual_future"].append(ce_af)
+
+            # (c) avg velocity aligned
             pred_aln = w_t_aln + delta_aln
             results["avg_vel_aln"].append(eval_weights(pred_aln, factory, device, eval_seed))
 
-            # (c) avg velocity raw
+            # (d) avg velocity raw
             pred_raw = w_t + delta_raw
             results["avg_vel_raw"].append(eval_weights(pred_raw, factory, device, eval_seed))
 
-            # (d) PCA + ridge aligned
+            # (e) PCA + ridge aligned
             pc_t = (w_t_aln - mean_aln) @ comps_aln.t()
             pc_pred = pc_t @ W_aln + b_aln
             pred_pca_aln = (pc_pred @ comps_aln) + mean_aln
             results["pca_ridge_aln"].append(eval_weights(pred_pca_aln.reshape(-1)[:D], factory, device, eval_seed))
 
-            # (e) PCA + ridge raw
+            # (f) PCA + ridge raw
             pc_t_raw = (w_t - mean_raw) @ comps_raw.t()
             pc_pred_raw = pc_t_raw @ W_raw + b_raw
             pred_pca_raw = (pc_pred_raw @ comps_raw) + mean_raw
             results["pca_ridge_raw"].append(eval_weights(pred_pca_raw.reshape(-1)[:D], factory, device, eval_seed))
+
+            # per-t breakdown
+            if t not in per_t:
+                per_t[t] = {arm: [] for arm in arms}
+            for arm in arms:
+                per_t[t][arm].append(results[arm][-1])
 
         if (idx_i + 1) % 5 == 0 or idx_i == 0:
             print(f"  test traj {idx_i+1}/{len(test_idx)} done")
@@ -238,12 +251,29 @@ def run_traj_gate(
         arm_mean = summary[arm]["ce_mean"]
         summary[arm]["delta_vs_identity"] = id_mean - arm_mean  # positive = better than identity
 
+    # Headroom = how much better the ACTUAL future is than identity
+    summary["headroom"] = id_mean - summary["actual_future"]["ce_mean"]
+    summary["predictor_captures_pct"] = (
+        summary["avg_vel_aln"]["delta_vs_identity"] / summary["headroom"] * 100
+        if summary["headroom"] > 1e-8 else 0.0
+    )
+
+    # Per-t breakdown
+    per_t_summary = {}
+    for t in sorted(per_t.keys()):
+        per_t_summary[t] = {}
+        for arm in arms:
+            vals = per_t[t][arm]
+            per_t_summary[t][arm] = statistics.fmean(vals)
+    summary["per_t_breakdown"] = per_t_summary
+
     # Aligned vs raw comparison
     summary["alignment_helps_avg_vel"] = summary["avg_vel_aln"]["ce_mean"] < summary["avg_vel_raw"]["ce_mean"]
     summary["alignment_helps_pca_ridge"] = summary["pca_ridge_aln"]["ce_mean"] < summary["pca_ridge_raw"]["ce_mean"]
 
-    # Gate verdict
-    best_predictor = min(arms, key=lambda a: summary[a]["ce_mean"])
+    # Gate verdict (exclude actual_future — it's the ceiling, not a predictor)
+    predictor_arms = [a for a in arms if a not in ("identity", "actual_future")]
+    best_predictor = min(predictor_arms, key=lambda a: summary[a]["ce_mean"])
     best_delta = id_mean - summary[best_predictor]["ce_mean"]
     summary["best_predictor"] = best_predictor
     summary["best_delta_vs_identity"] = best_delta
@@ -311,15 +341,26 @@ def main():
     print(f"Train: {summary['n_train']} trajectories | Test: {summary['n_test']} trajectories")
     print(f"Eval points: {summary['n_eval_points']}")
     print()
-    for arm in ["identity", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]:
+    for arm in ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]:
         s = summary[arm]
         delta = s.get("delta_vs_identity", 0.0)
         d_str = f"  delta_vs_id={delta:+.4f}" if arm != "identity" else ""
         print(f"  {arm:20s}  CE={s['ce_mean']:.4f} ± {s['ce_std']:.4f}{d_str}")
     print()
+    print(f"Headroom (identity - actual_future): {summary['headroom']:+.4f}")
+    print(f"Best predictor captures: {summary['predictor_captures_pct']:.1f}% of headroom")
     print(f"Best predictor: {summary['best_predictor']}  delta={summary['best_delta_vs_identity']:+.4f}")
     print(f"GATE PASSES (best > identity by >0.01): {summary['gate_passes']}")
     print(f"Alignment helps (both arms): {summary['alignment_helps']}")
+    # Per-t table
+    print("\n  Per-checkpoint CE (t = checkpoint index, step = t*ckpt_interval):")
+    print(f"  {'t':>3s} {'step':>5s}  {'identity':>8s} {'actual_f':>8s} {'avg_aln':>8s} {'avg_raw':>8s} {'pca_aln':>8s} {'pca_raw':>8s}  {'headroom':>8s} {'cap%':>6s}")
+    ckpt_int = meta.get("ckpt_interval", 100)
+    for t in sorted(summary["per_t_breakdown"].keys()):
+        row = summary["per_t_breakdown"][t]
+        hr = row["identity"] - row["actual_future"]
+        cap_pct = ((row["identity"] - row["avg_vel_aln"]) / hr * 100) if abs(hr) > 1e-8 else 0.0
+        print(f"  {t:>3d} {t*ckpt_int:>5d}  {row['identity']:>8.4f} {row['actual_future']:>8.4f} {row['avg_vel_aln']:>8.4f} {row['avg_vel_raw']:>8.4f} {row['pca_ridge_aln']:>8.4f} {row['pca_ridge_raw']:>8.4f}  {hr:>+8.4f} {cap_pct:>5.0f}%")
     print(f"Artifacts: {out_dir}/traj_gate_summary.json")
 
 

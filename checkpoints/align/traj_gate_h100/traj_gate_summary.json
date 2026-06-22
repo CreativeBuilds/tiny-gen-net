@@ -1,0 +1,49 @@
+{
+  "N": 100,
+  "T": 11,
+  "D": 17608,
+  "hidden": 64,
+  "depth": 3,
+  "predict_horizon": 100,
+  "n_ckpts_ahead": 1,
+  "pca_dim": 64,
+  "ridge_alpha": 10.0,
+  "n_train": 80,
+  "n_test": 20,
+  "n_eval_points": 200,
+  "identity": {
+    "ce_mean": 1.150557241037488,
+    "ce_std": 0.35924870030051886,
+    "n": 200
+  },
+  "avg_vel_aln": {
+    "ce_mean": 1.1622200849801303,
+    "ce_std": 0.3511044614274087,
+    "n": 200,
+    "delta_vs_identity": -0.011662843942642276
+  },
+  "avg_vel_raw": {
+    "ce_mean": 1.163215010792017,
+    "ce_std": 0.35256306966693773,
+    "n": 200,
+    "delta_vs_identity": -0.012657769754528925
+  },
+  "pca_ridge_aln": {
+    "ce_mean": 1.5556529005020858,
+    "ce_std": 0.2940020639001551,
+    "n": 200,
+    "delta_vs_identity": -0.4050956594645978
+  },
+  "pca_ridge_raw": {
+    "ce_mean": 1.8479021142274141,
+    "ce_std": 1.367875840646572,
+    "n": 200,
+    "delta_vs_identity": -0.6973448731899261
+  },
+  "alignment_helps_avg_vel": true,
+  "alignment_helps_pca_ridge": true,
+  "best_predictor": "identity",
+  "best_delta_vs_identity": 0.0,
+  "gate_passes": false,
+  "alignment_helps": true
+}
