@@ -174,8 +174,28 @@ def run_traj_gate(
     pc_Y_raw = (train_Y_raw - mean_raw) @ comps_raw.t()
     W_raw, b_raw = _ridge(pc_X_raw, pc_Y_raw, ridge_alpha)
 
+    # (e) MLP predictor in aligned PCA space — the cheapest LEARNED nonlinear predictor.
+    # If this can't capture headroom, neither can JEPA.
+    print("Training MLP predictor in aligned PCA space...")
+    mlp = _MLPPredictor(pca_dim, pca_dim, hidden=256, n_layers=3).to(device)
+    mlp_opt = torch.optim.AdamW(mlp.parameters(), lr=1e-3, weight_decay=1e-4)
+    pc_X_aln_dev = pc_X_aln.to(device)
+    pc_Y_aln_dev = pc_Y_aln.to(device)
+    mlp_losses = []
+    for epoch in range(500):
+        idx = torch.randperm(pc_X_aln_dev.shape[0])
+        for s in range(0, len(idx), 64):
+            b = idx[s:s+64]
+            pred = mlp(pc_X_aln_dev[b])
+            loss = torch.nn.functional.mse_loss(pred, pc_Y_aln_dev[b])
+            mlp_opt.zero_grad(); loss.backward(); mlp_opt.step()
+        if epoch % 100 == 0:
+            mlp_losses.append(loss.item())
+    mlp.eval()
+    print(f"  MLP final loss: {mlp_losses[-1]:.6f}")
+
     # --- Evaluate on test trajectories ---
-    arms = ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]
+    arms = ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw", "mlp_aln"]
     results = {arm: [] for arm in arms}
     per_t: dict[int, dict[str, list[float]]] = {}
 
@@ -214,6 +234,13 @@ def run_traj_gate(
             pc_pred_raw = pc_t_raw @ W_raw + b_raw
             pred_pca_raw = (pc_pred_raw @ comps_raw) + mean_raw
             results["pca_ridge_raw"].append(eval_weights(pred_pca_raw.reshape(-1)[:D], factory, device, eval_seed))
+
+            # (g) MLP aligned — learned nonlinear predictor in PCA-compressed aligned space
+            with torch.no_grad():
+                pc_t_mlp = ((w_t_aln - mean_aln) @ comps_aln.t()).unsqueeze(0).to(device)
+                pc_pred_mlp = mlp(pc_t_mlp).squeeze(0).cpu()
+                pred_mlp = (pc_pred_mlp @ comps_aln) + mean_aln
+            results["mlp_aln"].append(eval_weights(pred_mlp.reshape(-1)[:D], factory, device, eval_seed))
 
             # per-t breakdown
             if t not in per_t:
@@ -286,6 +313,20 @@ def run_traj_gate(
     return summary
 
 
+class _MLPPredictor(torch.nn.Module):
+    """Simple MLP: predicts PCA-space w_{t+n} from PCA-space w_t."""
+    def __init__(self, dim_in: int, dim_out: int, hidden: int = 256, n_layers: int = 3):
+        super().__init__()
+        layers = [torch.nn.Linear(dim_in, hidden), torch.nn.SiLU()]
+        for _ in range(n_layers - 2):
+            layers += [torch.nn.Linear(hidden, hidden), torch.nn.SiLU()]
+        layers += [torch.nn.Linear(hidden, dim_out)]
+        self.net = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.net(x)
+
+
 def _ridge(X: torch.Tensor, Y: torch.Tensor, alpha: float) -> tuple[torch.Tensor, torch.Tensor]:
     """Ridge regression: Y ≈ X @ W + b. Returns (W, b).
 
@@ -341,7 +382,7 @@ def main():
     print(f"Train: {summary['n_train']} trajectories | Test: {summary['n_test']} trajectories")
     print(f"Eval points: {summary['n_eval_points']}")
     print()
-    for arm in ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw"]:
+    for arm in ["identity", "actual_future", "avg_vel_aln", "avg_vel_raw", "pca_ridge_aln", "pca_ridge_raw", "mlp_aln"]:
         s = summary[arm]
         delta = s.get("delta_vs_identity", 0.0)
         d_str = f"  delta_vs_id={delta:+.4f}" if arm != "identity" else ""
@@ -354,13 +395,14 @@ def main():
     print(f"Alignment helps (both arms): {summary['alignment_helps']}")
     # Per-t table
     print("\n  Per-checkpoint CE (t = checkpoint index, step = t*ckpt_interval):")
-    print(f"  {'t':>3s} {'step':>5s}  {'identity':>8s} {'actual_f':>8s} {'avg_aln':>8s} {'avg_raw':>8s} {'pca_aln':>8s} {'pca_raw':>8s}  {'headroom':>8s} {'cap%':>6s}")
+    print(f"  {'t':>3s} {'step':>5s}  {'identity':>8s} {'actual_f':>8s} {'avg_aln':>8s} {'avg_raw':>8s} {'pca_aln':>8s} {'pca_raw':>8s} {'mlp_aln':>8s}  {'headroom':>8s} {'cap%':>6s}")
     ckpt_int = meta.get("ckpt_interval", 100)
     for t in sorted(summary["per_t_breakdown"].keys()):
         row = summary["per_t_breakdown"][t]
         hr = row["identity"] - row["actual_future"]
         cap_pct = ((row["identity"] - row["avg_vel_aln"]) / hr * 100) if abs(hr) > 1e-8 else 0.0
-        print(f"  {t:>3d} {t*ckpt_int:>5d}  {row['identity']:>8.4f} {row['actual_future']:>8.4f} {row['avg_vel_aln']:>8.4f} {row['avg_vel_raw']:>8.4f} {row['pca_ridge_aln']:>8.4f} {row['pca_ridge_raw']:>8.4f}  {hr:>+8.4f} {cap_pct:>5.0f}%")
+        mlp_val = row.get("mlp_aln", 0.0)
+        print(f"  {t:>3d} {t*ckpt_int:>5d}  {row['identity']:>8.4f} {row['actual_future']:>8.4f} {row['avg_vel_aln']:>8.4f} {row['avg_vel_raw']:>8.4f} {row['pca_ridge_aln']:>8.4f} {row['pca_ridge_raw']:>8.4f} {mlp_val:>8.4f}  {hr:>+8.4f} {cap_pct:>5.0f}%")
     print(f"Artifacts: {out_dir}/traj_gate_summary.json")
 
 
