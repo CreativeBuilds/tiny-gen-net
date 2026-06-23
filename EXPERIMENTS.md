@@ -24,6 +24,21 @@ Copy this block for new entries:
 
 ## Experiments
 
+### 2026-06-23 — [Phase 6 / Growth] Transformer WIDTH growth + low-rank correction (CPU smoke)
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 6 (architecture growth) |
+| **Script** | `experiments/phase_grow_width_realtext_smoke.py`, operator `src/growth/tx_width_growth.py` |
+| **Seed** | 1234 |
+| **Hardware** | CPU (local, $0 — pod `vgt6p4yoar259l` was lost 404 before Task 002 reported; re-rent gated on this smoke) |
+| **Setup** | VariableTinyTransformer d=32→64 (n_head 4→8, head_dim=8 const, L=3, ctx=8). Net2Wider zero-pad copy of tok/pos/MHA(in_proj QKV, out_proj)/FF/head; LayerNorm copied with new gamma=beta=0. Source lightly pre-trained (20 steps) before growth. |
+| **Key metrics** | src=17,048p → tgt=64,808p; function-preservation max-abs logit diff **1.26** (tol 5e-2 → **NOT** preserved on trained source; 0.014 on *untrained* source); correction identity diff @step0 = 0.0; B-norm 0→0.073 (grad 0.016) → correction learns; no NaN over 50 steps |
+| **Outcome** | inconclusive — operator runs clean, but **NOT exactly function-preserving** |
+| **Notes** | **Key finding:** unlike the MLP width-growth (`src/growth/width_growth.py`, which IS exact — no normalization), the transformer is only *approximately* function-preserving under naive zero-pad. Root cause isolated by diagnostic: embeddings copy exactly (first Ds identical, new dims=0), but **full-width LayerNorm** breaks it — its denominator `sqrt(var+eps)` is computed over all Dt dims; padding with zeros shrinks per-token variance, and the residual **scales with activation magnitude** (0.014 untrained → 1.26 trained). No static per-channel gamma rescale fixes it (a sqrt(Dt/Ds) attempt made it *worse*). Exact transformer width growth needs an architectural change: segment/sub-vector LayerNorm or RMSNorm restricted to the original dims, or LN-free residual injection. LowRankCorrection (zero-init B = identity at step0) is verified working and is the natural vehicle to *learn out* the LN-induced gap. |
+| **Decision** | Do **NOT** re-rent H100 yet. The scale run from `plans/width_scaleup_v1.md` assumed function preservation; that premise is false for this architecture. Next increment is a cheap local fix (RMSNorm-on-original-dims variant), re-measure FP diff, THEN re-rent for scale. |
+| **Artifacts** | `~/.hermes-chats/tiny-gen-net/status/forgecritic.json` (task 003, status=complete_with_caveats) |
+
 ### 2026-06-20 — [Phase 5c] Fine aux sweep (light↔mid) + strong_plan — H100
 
 | Field | Value |

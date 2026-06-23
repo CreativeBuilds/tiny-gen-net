@@ -47,6 +47,17 @@ Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
 
 ## Immediate Next Steps
 
+1. **[NEW 06-23] Width-growth FP gap is LayerNorm, not the copy.** Transformer
+   zero-pad width growth is only approx function-preserving (1.26 logit diff on a
+   trained d32→d64 model) because full-width LayerNorm's variance shrinks when new
+   dims are zero. MLP growth stays exact (no norm). See EXPERIMENTS.md 06-23.
+2. **Local fix before any pod:** add an RMSNorm/segment-norm-over-original-dims
+   variant of TxBlock, re-run `phase_grow_width_realtext_smoke.py`, confirm FP
+   diff < 1e-3. Only THEN re-rent ONE H100 (≤$3.29/hr) for the scale arm.
+3. `plans/width_scaleup_v1.md` assumed exact preservation — revise its premise.
+
+### Prior (Phase 5c, paused)
+
 1. **Stop aux micro-sweeps** — light and mid bracket the useful region; fine is a dead end.
 2. Add one **20–30M warm-start anchor** on **`mid`** profile (separate ablation) — test whether larger anchor closes extrap gap vs ws ablation.
 3. Keep **`light`** as in-grid reference; use **`mid`** as strong_plan balance baseline.
