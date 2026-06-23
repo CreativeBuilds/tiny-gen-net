@@ -158,3 +158,58 @@ def verify_tx_growth_preserves_function(
         f"TX GROWTH NOT FUNCTION-PRESERVING: max abs logit diff {max_diff:.3e} >= {atol:.1e}."
     )
     return max_diff
+
+
+def grow_tx_depth_scaled_copy(
+    source_model: VariableTinyTransformer,
+    target_n_layer: int,
+    alpha: float = 0.0,
+) -> VariableTinyTransformer:
+    """Grow source transformer to target_n_layer.
+
+    New blocks are initialized as SCALED COPIES of the last source block:
+      new_block = alpha * source_block[n_src - 1]
+
+    alpha=0.0: zero-init (identity via residual, function-preserving)
+    alpha=1.0: full duplicate (applies learned transform again, NOT function-preserving)
+    alpha=0.1: 10% of the learned transformation + 90% identity
+
+    Scales attn.out_proj and ff[-1] (the two output projections that determine
+    the block's contribution to the residual stream). Internal weights (in_proj,
+    ff[0], layernorms) are copied unchanged so the block processes its input
+    the same way as the source block — only the output magnitude is scaled.
+    """
+    D = source_model.d_model
+    H = source_model.n_head
+    n_src = source_model.n_layer
+    ctx = source_model.ctx_len
+    vocab = source_model.vocab_size
+    K = target_n_layer - n_src
+    assert K > 0
+
+    target = build_tx_model(D, target_n_layer, H, ctx_len=ctx, vocab=vocab)
+
+    # Copy tok, pos, head
+    target.tok.weight.data.copy_(source_model.tok.weight.data)
+    target.pos.weight.data.copy_(source_model.pos.weight.data)
+    target.head.weight.data.copy_(source_model.head.weight.data)
+    target.head.bias.data.copy_(source_model.head.bias.data)
+
+    # Copy source blocks directly
+    for k in range(n_src):
+        _copy_block(target.blocks[k], source_model.blocks[k])
+
+    # Init new blocks as scaled copies of the last source block
+    src_block = source_model.blocks[n_src - 1]
+    for k in range(n_src, target_n_layer):
+        # First copy the full block (in_proj, ln, ff[0], etc.)
+        _copy_block(target.blocks[k], src_block)
+        # Then scale the two output projections by alpha
+        block = target.blocks[k]
+        block.attn.out_proj.weight.data.mul_(alpha)
+        if block.attn.out_proj.bias is not None:
+            block.attn.out_proj.bias.data.mul_(alpha)
+        block.ff[-1].weight.data.mul_(alpha)
+        block.ff[-1].bias.data.mul_(alpha)
+
+    return target
