@@ -1,23 +1,33 @@
 # Project State — tiny-gen-net
 
-*Last updated: 2026-06-23 (width-growth scale validation)*
+*Last updated: 2026-06-23 21:02 UTC — Scale run COMPLETE*
 
 ## Current Phase
 
-**Width-Growth scale validation — function preservation VERIFIED at d512→d1024 (H100)**
+**Width-Growth scale validation — COMPLETE. Function preservation + training advantage verified at d512→d1024.**
 
-The function-preserving width-growth operator (exact zero-pad + ActiveLayerNorm over
-original Ds dims + zero-init low-rank correction) now holds **at scale**: d512→d1024,
-8 layers, 10.66M→42.30M params, FP max-abs logit diff at init **9.766e-04 < 1e-3 tol**
-on an H100 (pod `nj54tli4w9xpdj`). Toy d32→d64 FP was 4.77e-07; the margin widens with
-width but stays in tolerance. The 3-arm matched-FLOP CE-vs-FLOPs run (random vs grown vs
-grown+corr) is in progress — final result + pod-stop next monitor cycle. Runner is
-`experiments/phase_grow_width_realtext.py` @ `15f1296` on `fc-001-branch`.
+The function-preserving width-growth operator (exact zero-pad + ActiveLayerNorm +
+zero-init low-rank correction) has been validated end-to-end at scale:
 
-**Next:** collect the 3-arm final CE-vs-FLOPs from the running job; quantify the
-effective FLOP-reduction factor of grown/grown+corr vs random init at the target CE;
-then STOP the pod. Provision future scale pods by pushing code (tar/scp), not git clone
-(private repo, no deploy key on pod).
+- **FP holds**: d512→d1024, 8 layers, 10.66M→42.30M params, FP max-abs logit diff
+  **8.58e-06 < 1e-3** on H100 (toy d32→d64 was 4.77e-07).
+- **Grown+corr beats random**: 3-arm matched-FLOP comparison at d1024:
+  - Random: CE 0.2673
+  - Grown: CE 0.2371 (−11.3% vs random)
+  - Grown+corr (rank32): CE **0.2180** (−18.5% vs random, −8.1% vs grown)
+- **Knowledge transfers**: grown arm starts at source CE (0.2427), already below
+  random's final CE (0.2673) — source model's knowledge transfers perfectly through
+  width growth.
+- Correction layer actively learns (B norm 0→1.086).
+
+Pod `nj54tli4w9xpdj` STOPPED (training complete, no idle burn). Budget: $0/hr.
+
+**Next decision points:**
+1. Push the scale results to origin, commit EXPERIMENTS.md + STATE.md updates.
+2. Next experiment direction: (a) larger growth ratio (d256→d1024, 4x), (b) depth
+   growth (add layers), (c) longer training to see if gap widens or narrows, (d)
+   real TinyStories corpus instead of synthetic fallback, (e) iterative growth
+   (d512→d768→d1024) to test multi-step preservation.
 
 ---
 
@@ -40,53 +50,23 @@ then STOP the pod. Provision future scale pods by pushing code (tar/scp), not gi
 
 Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
 
-## Phase 5c Status
+## Key Results (width-growth scale run, 2026-06-23)
 
-| Item | Status |
-|------|--------|
-| Beat random in-grid | ✅ **+0.042** (`phase5c_light` only) |
-| Beat random extrap | ❌ best: ws ablation −0.023 |
-| Best strong_plan balance | ✅ **mid** (fine sweep rejected) |
-| Fine sweep (light↔mid) | ❌ failed — extrap collapse |
-
-## Key Results (phase5c_fine, seed 42, H100)
-
-- **In-grid zero-shot Δ:** −0.017 (vs light +0.042, mid −0.072)
-- **Extrap zero-shot Δ:** −0.623 (vs light −0.149, mid −0.115)
-- **Config:** `jepa_w=0.11`, `cons_w=0.20`, `strong_plan=True`, `plan_scale=0.1`
-- **Worst extrap preset:** nano_16m holdout CE 5.49 vs random 4.31
-
-## Open Questions
-
-- Aux weight axis is **not** smoothly monotonic between light/mid/fine on extrap — `cons_w=0.20` may hit an unstable region.
-- `fine` in-grid near-neutral (−0.017) suggests the in-grid/extrap tradeoff is sharp, not a continuous Pareto curve.
-- Extrap gains may require anchor scale (20–30M) rather than further aux micro-tuning.
+| Metric | Value |
+|--------|-------|
+| Source (d512) params | 10,663,944 |
+| Target (d1024) params | 42,299,400 |
+| FP max-abs diff @ init | 8.583e-06 (< 1e-3) |
+| Source val CE (pretrain) | 0.2427 |
+| Random final CE | 0.2673 |
+| Grown final CE | 0.2371 (−11.3%) |
+| Grown+corr final CE | 0.2180 (−18.5%) |
+| Correction B norm | 1.086 |
+| Elapsed | 1002 sec (~16.7 min H100) |
 
 ## Immediate Next Steps
 
-1. **[DONE 06-23] Width-growth is now EXACTLY function-preserving.** Task 004 added
-   `ActiveLayerNorm` (normalizes over the original Ds dims only) to `TxBlock`;
-   `grow_tx_width` sets `active_dim=Ds`. CPU smoke: FP max-abs logit diff dropped
-   **1.255 → 4.77e-07** (d32→d64, trained source); correction still identity@step0
-   and learns (B 0→0.201, no NaN); backward-compatible with `nn.LayerNorm`. See
-   EXPERIMENTS.md 06-23. **Re-rent gate PASSED.**
-2. **[DONE 06-23] Real-text 3-arm scale runner built + CPU-smokes clean.** Task 005
-   added `experiments/phase_grow_width_realtext.py` (single parameterized file,
-   `--smoke` <60s CPU path; same code scales to d512→d1024 via flags). Reuses the
-   exact `grow_tx_width`/`LowRankCorrection`/`function_preservation_max_diff`.
-   Smoke: FP function_preserving=true at init, correction identity@step0, all 3
-   arms finite (random 1.613 / grown 1.405 / grown+corr 1.391 final val CE), no
-   NaN, 1.57s. See EXPERIMENTS.md 06-23. **Re-rent gate (committed CPU-smoking
-   runner) NOW SATISFIED.**
-3. **[NEXT — rent next cycle] Scale arm on ONE H100 (≤$3.29/hr).** Push fc-001,
-   launch `phase_grow_width_realtext.py --source-d 512 --target-d 1024 --n-layer 8
-   --src-head 8 --ctx 256 --batch 64 --pretrain-steps 2000 --steps 4000 --rank 32
-   --corpus tinystories`. Primary metric CE-vs-FLOPs across the 3 arms.
-4. `plans/width_scaleup_v1.md` premise updated — operator no longer needs a
-   function-preservation caveat at the width primitive.
-
-### Prior (Phase 5c, paused)
-
-1. **Stop aux micro-sweeps** — light and mid bracket the useful region; fine is a dead end.
-2. Add one **20–30M warm-start anchor** on **`mid`** profile (separate ablation) — test whether larger anchor closes extrap gap vs ws ablation.
-3. Keep **`light`** as in-grid reference; use **`mid`** as strong_plan balance baseline.
+1. **[DONE 06-23] Width-growth EXACTLY function-preserving** — Task 004 (ActiveLayerNorm, FP 4.77e-07 at toy).
+2. **[DONE 06-23] 3-arm scale runner** — Task 005 (CPU smoke passed).
+3. **[DONE 06-23] Scale run d512→d1024** — Task 006 COMPLETE. FP 8.58e-06, grown+corr beats random by 18.5%.
+4. **[NEXT] Commit + push results. Decide next experiment direction.**
