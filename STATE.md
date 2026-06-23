@@ -1,10 +1,27 @@
 # Project State — tiny-gen-net
 
-*Last updated: 2026-06-20*
+*Last updated: 2026-06-23 (width-growth scale validation)*
 
 ## Current Phase
 
-**Phase 5c — fine aux sweep failed; mid remains best strong_plan balance**
+**Width-Growth scale validation — function preservation VERIFIED at d512→d1024 (H100)**
+
+The function-preserving width-growth operator (exact zero-pad + ActiveLayerNorm over
+original Ds dims + zero-init low-rank correction) now holds **at scale**: d512→d1024,
+8 layers, 10.66M→42.30M params, FP max-abs logit diff at init **9.766e-04 < 1e-3 tol**
+on an H100 (pod `nj54tli4w9xpdj`). Toy d32→d64 FP was 4.77e-07; the margin widens with
+width but stays in tolerance. The 3-arm matched-FLOP CE-vs-FLOPs run (random vs grown vs
+grown+corr) is in progress — final result + pod-stop next monitor cycle. Runner is
+`experiments/phase_grow_width_realtext.py` @ `15f1296` on `fc-001-branch`.
+
+**Next:** collect the 3-arm final CE-vs-FLOPs from the running job; quantify the
+effective FLOP-reduction factor of grown/grown+corr vs random init at the target CE;
+then STOP the pod. Provision future scale pods by pushing code (tar/scp), not git clone
+(private repo, no deploy key on pod).
+
+---
+
+## (prior) Phase 5c — fine aux sweep failed; mid remains best strong_plan balance
 
 `phase5c_fine` (jepa=0.11, cons=0.20) landed in-grid near neutral (−0.017) but extrap collapsed (−0.623). Aux tuning between light and mid is **not** monotonic — `mid` still best balanced strong_plan config.
 

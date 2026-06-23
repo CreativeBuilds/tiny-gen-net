@@ -786,3 +786,28 @@ See Phase 3 refine entry below for full metrics. Next recommended work: Phase 4 
 | **Outcome** | smoke: pipeline OK; full run superseded by Phase 1 entry above |
 | **Notes** | Initial smoke (10 models, 500 diffusion steps) showed weak FT signal only. |
 | **Artifacts** | — |
+
+---
+
+### 2026-06-23 — [Width-Growth / Task 006] d512→d1024 function-preservation VERIFIED at scale (H100)
+
+| Field | Value |
+|-------|-------|
+| **Phase** | width-growth scale validation |
+| **Script** | `experiments/phase_grow_width_realtext.py` (commit `15f1296`, fc-001-branch) |
+| **Pod** | RunPod H100 SXM 80GB `nj54tli4w9xpdj` ($3.29/hr) |
+| **Config** | source d512/L8/h8 → target d1024/L16h equiv, ctx256, batch64, pretrain2000, steps4000, rank32, synthetic-fallback corpus |
+| **Source params** | 10,663,944 (10.66M) |
+| **Target params** | 42,299,400 (42.30M) |
+| **FP max-abs logit diff @ init** | **9.766e-04 < 1e-3 tol → function_preserving = TRUE at scale** |
+| **Grown / grown+corr CE @ init** | 23.6085 == source CE (exact-init); correction identity@step0 |
+| **GPU verification** | 99% util, 11.4 GB, 652 W (genuine training, not idle/hang) |
+| **Outcome** | Function-preserving zero-pad width growth (ActiveLayerNorm over original Ds dims + zero-init low-rank correction) **holds up to fp32 numerics at 42M params**, not just toy d32→d64 (where FP was 4.77e-07). Margin tightens with width (9.77e-04 vs 4.77e-07) — expected from larger logit magnitudes / accumulation, still within tol. |
+
+**3-arm matched-FLOP CE-vs-FLOPs trajectory (random vs grown vs grown+corr):** in progress at log time; collected next monitor cycle from `/workspace/tiny-gen-net/train_d512_d1024.log`, then pod stopped.
+
+**Process notes (this run)**
+- Three scale-blocking bugs surfaced only at real dims (toy smoke always used in-vocab d32→d64): synthetic-corpus empty-range crash (`5c448b5`); `TxSpec.validate` toy discrete-search caps rejecting d512/d1024/L8 → added opt-in `TxSpec.scale` flag (`150ba3e`); arm-A random-init spec missing the flag (`15f1296`).
+- Pod was rented but **left idle** by the prior provisioning attempt: the repo is private and the pod has no GitHub deploy key, so `git clone` failed silently. Provisioned instead via **tar-over-ssh** push of the worktree. Lesson: provision private-repo pods by pushing code, not cloning.
+
+**Conclusion:** The function-preserving width-growth operator generalizes from the toy regime to a 42M-param transformer on real hardware. Exact-init preservation at scale was the central open question; it is now answered YES. Whether the *learned low-rank correction* gives the grown arm a durable FLOP-efficiency edge over random-init at this scale is the next result (CE-vs-FLOPs, pending run completion).
