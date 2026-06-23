@@ -19,6 +19,7 @@ class TrainConfig:
     batch_size: int = 64
     seed: int = 42
     device: str = ""
+    skip: int = 0  # 0=next-char, k>0=skip-char (predict char[t+k] from char[t])
 
 
 def set_seed(seed: int):
@@ -39,7 +40,7 @@ def train_tiny_mlp(cfg: TrainConfig | None = None) -> tuple[TinyMLP, list[float]
     set_seed(cfg.seed)
     device = cfg.device or device_str()
     corpus = generate_corpus(SyntheticConfig(seed=cfg.seed))
-    pairs = list(corpus_to_tensor_pairs(corpus))
+    pairs = list(corpus_to_tensor_pairs(corpus, skip=cfg.skip))
     if not pairs: raise RuntimeError("Empty training pairs from corpus")
 
     model = TinyMLP(hidden_dim=cfg.hidden_dim).to(device)
@@ -79,11 +80,11 @@ def train_tiny_mlp(cfg: TrainConfig | None = None) -> tuple[TinyMLP, list[float]
     return model, losses, metrics
 
 
-def eval_model_loss(model: TinyMLP, seed: int = 0, device: str = "cpu", batches: int = 20) -> dict:
+def eval_model_loss(model: TinyMLP, seed: int = 0, device: str = "cpu", batches: int = 20, skip: int = 0) -> dict:
     """Evaluate model on synthetic data (for comparing inits)."""
     set_seed(seed + 999)
     corpus = generate_corpus(SyntheticConfig(seed=seed + 999))
-    pairs = list(corpus_to_tensor_pairs(corpus))
+    pairs = list(corpus_to_tensor_pairs(corpus, skip=skip))
     crit = nn.CrossEntropyLoss()
     model.eval()
     losses, correct, total = [], 0, 0
@@ -97,11 +98,11 @@ def eval_model_loss(model: TinyMLP, seed: int = 0, device: str = "cpu", batches:
     return {"eval_loss": sum(losses) / len(losses), "eval_acc": correct / max(total, 1)}
 
 
-def finetune_steps(model: TinyMLP, steps: int, seed: int = 0, lr: float = 1e-3, device: str = "cpu") -> list[float]:
+def finetune_steps(model: TinyMLP, steps: int, seed: int = 0, lr: float = 1e-3, device: str = "cpu", skip: int = 0) -> list[float]:
     """Short fine-tune from current weights; returns loss curve."""
     set_seed(seed + 1234)
     corpus = generate_corpus(SyntheticConfig(seed=seed + 1234))
-    pairs = list(corpus_to_tensor_pairs(corpus))
+    pairs = list(corpus_to_tensor_pairs(corpus, skip=skip))
     opt = torch.optim.AdamW(model.parameters(), lr=lr)
     crit = nn.CrossEntropyLoss()
     losses: list[float] = []

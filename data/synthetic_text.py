@@ -2,6 +2,11 @@
 
 Generates short repeating-pattern strings over a tiny alphabet.
 Easy to overfit, fast to train, reproducible.
+
+Supports two prediction modes:
+  - next_char (default): predict char[t+1] from char[t] — solvable by bigram table
+  - skip_char: predict char[t+k] from char[t] — requires multi-step transitions
+    that exercise the recurrent hidden state (where depth/width matter)
 """
 
 import random
@@ -23,6 +28,7 @@ class SyntheticConfig:
     min_len: int = 64
     max_len: int = 128
     seed: int = 42
+    skip: int = 0  # 0 = next-char prediction, k>0 = predict char[t+k] from char[t]
 
 
 def generate_corpus(cfg: SyntheticConfig | None = None) -> list[str]:
@@ -50,11 +56,17 @@ def decode_char(i: int) -> str:
     return IDX_TO_CHAR.get(i % VOCAB_SIZE, "a")
 
 
-def corpus_to_tensor_pairs(corpus: list[str]):
-    """Yield (input_idx, target_idx) for next-char prediction at each position."""
+def corpus_to_tensor_pairs(corpus: list[str], skip: int = 0):
+    """Yield (input_idx, target_idx) prediction pairs.
+
+    skip=0: predict char[t+1] from char[t] (next-char, bigram-solvable)
+    skip=k: predict char[t+k] from char[t] (skip-char, requires multi-step)
+    """
     import torch
+    offset = skip + 1 if skip > 0 else 1
     for text in corpus:
         indices = [encode_char(c) for c in text]
-        if len(indices) < 2: continue
-        for t in range(len(indices) - 1):
-            yield torch.tensor(indices[t], dtype=torch.long), torch.tensor(indices[t + 1], dtype=torch.long)
+        if len(indices) < offset + 1:
+            continue
+        for t in range(len(indices) - offset):
+            yield torch.tensor(indices[t], dtype=torch.long), torch.tensor(indices[t + offset], dtype=torch.long)

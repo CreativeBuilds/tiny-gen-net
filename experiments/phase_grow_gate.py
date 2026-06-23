@@ -43,11 +43,11 @@ from src.utils.device import device_str, get_device
 from data.synthetic_text import SyntheticConfig, corpus_to_tensor_pairs, generate_corpus, VOCAB_SIZE
 
 
-def train_variable_mlp(model, steps, lr, seed, device):
+def train_variable_mlp(model, steps, lr, seed, device, skip=0):
     """Train a VariableTinyMLP for `steps`. Returns eval CE after training."""
     set_seed(seed)
     corpus = generate_corpus(SyntheticConfig(seed=seed))
-    pairs = list(corpus_to_tensor_pairs(corpus))
+    pairs = list(corpus_to_tensor_pairs(corpus, skip=skip))
     if not pairs:
         raise RuntimeError("Empty training pairs")
     opt = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -61,14 +61,14 @@ def train_variable_mlp(model, steps, lr, seed, device):
         loss.backward()
         opt.step()
     model.eval()
-    return eval_model_loss(model, seed=seed + 999, device=device)["eval_loss"]
+    return eval_model_loss(model, seed=seed + 999, device=device, skip=skip)["eval_loss"]
 
 
-def train_source(source_depth, hidden, source_steps, seed, device):
+def train_source(source_depth, hidden, source_steps, seed, device, skip=0):
     """Train the source model to convergence."""
     model = build_model(hidden, source_depth)
     model.to(device)
-    ce = train_variable_mlp(model, source_steps, 1e-3, seed, device)
+    ce = train_variable_mlp(model, source_steps, 1e-3, seed, device, skip=skip)
     return model, ce
 
 
@@ -82,6 +82,7 @@ def run_grow_gate(
     rank=8,
     seeds=(0, 1, 2, 3, 4),
     device="cpu",
+    skip=0,
 ):
     """Run the full GATE-GROW experiment."""
     arms = ["random", "naive_grow", "grown_corr", "grown_rand_corr", "source_only"]
@@ -97,7 +98,7 @@ def run_grow_gate(
         print(f"--- seed {seed} ({si+1}/{len(seeds)}) ---")
 
         # 1. Train source model
-        source_model, source_ce = train_source(source_depth, hidden, source_steps, seed, device)
+        source_model, source_ce = train_source(source_depth, hidden, source_steps, seed, device, skip=skip)
         print(f"  source trained: CE={source_ce:.4f} (depth={source_depth}, {sum(p.numel() for p in source_model.parameters())} params)")
 
         # 2. Grow to target depth (function-preserving)
@@ -146,11 +147,11 @@ def run_grow_gate(
 
         # 4. Evaluate zero-shot (before fine-tune)
         zero_ces = {
-            "random": eval_model_loss(random_model, seed=seed + 999, device=device)["eval_loss"],
-            "naive_grow": eval_model_loss(naive_model, seed=seed + 999, device=device)["eval_loss"],
-            "grown_corr": eval_model_loss(corr_model, seed=seed + 999, device=device)["eval_loss"],
-            "grown_rand_corr": eval_model_loss(rand_corr_model, seed=seed + 999, device=device)["eval_loss"],
-            "source_only": eval_model_loss(source_only_model, seed=seed + 999, device=device)["eval_loss"],
+            "random": eval_model_loss(random_model, seed=seed + 999, device=device, skip=skip)["eval_loss"],
+            "naive_grow": eval_model_loss(naive_model, seed=seed + 999, device=device, skip=skip)["eval_loss"],
+            "grown_corr": eval_model_loss(corr_model, seed=seed + 999, device=device, skip=skip)["eval_loss"],
+            "grown_rand_corr": eval_model_loss(rand_corr_model, seed=seed + 999, device=device, skip=skip)["eval_loss"],
+            "source_only": eval_model_loss(source_only_model, seed=seed + 999, device=device, skip=skip)["eval_loss"],
         }
         print(f"  zero-shot CE: " + " ".join(f"{k}={v:.4f}" for k, v in zero_ces.items()))
 
@@ -160,7 +161,7 @@ def run_grow_gate(
         for arm, model in [("random", random_model), ("naive_grow", naive_model),
                            ("grown_corr", corr_model), ("grown_rand_corr", rand_corr_model),
                            ("source_only", source_only_model)]:
-            ce = train_variable_mlp(model, finetune_steps, 1e-3, seed + 100, device)
+            ce = train_variable_mlp(model, finetune_steps, 1e-3, seed + 100, device, skip=skip)
             ft_ces[arm] = ce
             results[arm].append(ce)
         print(f"  post-FT CE: " + " ".join(f"{k}={v:.4f}" for k, v in ft_ces.items()))
@@ -171,7 +172,7 @@ def run_grow_gate(
         "source_depth": source_depth, "target_depth": target_depth,
         "hidden": hidden, "source_steps": source_steps,
         "finetune_steps": finetune_steps, "rank": rank,
-        "n_seeds": len(seeds), "seeds": list(seeds),
+        "n_seeds": len(seeds), "seeds": list(seeds), "skip": skip,
         "growth_fn_preservation_max": max(growth_diffs),
     }
     for arm in arms:
@@ -210,6 +211,7 @@ def main():
     p.add_argument("--finetune_steps", type=int, default=500)
     p.add_argument("--rank", type=int, default=8)
     p.add_argument("--seeds", type=str, default="0,1,2,3,4")
+    p.add_argument("--skip", type=int, default=0, help="Skip-char distance (0=next-char, k>0=skip-char)")
     p.add_argument("--out", type=str, default="checkpoints/align/grow_gate")
     args = p.parse_args()
 
@@ -224,6 +226,7 @@ def main():
         finetune_steps=args.finetune_steps,
         rank=args.rank,
         seeds=seeds,
+        skip=args.skip,
         device=device,
     )
 
