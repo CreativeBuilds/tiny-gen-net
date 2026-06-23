@@ -86,10 +86,16 @@ def build_corpus(args):
                 seqs = [txt[i:i + step] for i in range(0, len(txt), step)]
                 return [s for s in seqs if len(s) > args.ctx + 1], "tinystories"
         used = "synthetic_text(tinystories_fallback)"
+    # Ensure a valid, non-empty length range: sequences must comfortably exceed
+    # ctx (windows need len > ctx+1). min_len scales with ctx; max_len is clamped
+    # above min_len so randint(min_len, max_len) is never an empty range
+    # (prior bug: ctx=256 -> min_len=512 > default max_len=128 -> empty range).
+    min_len = max(args.ctx * 2, 64)
+    max_len = max(args.max_len, min_len * 2)
     corpus = generate_corpus(SyntheticConfig(
         num_sequences=args.num_sequences,
-        min_len=max(args.ctx * 2, 64),
-        max_len=args.max_len,
+        min_len=min_len,
+        max_len=max_len,
     ))
     return corpus, used
 
