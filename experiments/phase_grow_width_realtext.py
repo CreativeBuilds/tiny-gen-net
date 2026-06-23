@@ -288,7 +288,8 @@ def main():
 
     # --- ARM A: random init target ------------------------------------------
     tgt_spec = TxSpec(d_model=args.target_d, n_layer=args.n_layer,
-                      n_head=args.target_d // head_dim, ctx_len=args.ctx)
+                      n_head=args.target_d // head_dim, ctx_len=args.ctx,
+                      scale=True)
     random_t = VariableTinyTransformer(tgt_spec, vocab_size=VOCAB_SIZE).to(device)
 
     # --- train all three arms (matched steps == matched FLOPs, same target size)
