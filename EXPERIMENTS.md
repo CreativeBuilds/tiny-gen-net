@@ -24,6 +24,34 @@ Copy this block for new entries:
 
 ## Experiments
 
+### 2026-06-23 — [Phase 6 / Growth] Real-text 3-arm width-growth scale runner — CPU smoke (Task 005) ✅
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 6 (Growth) |
+| **Script** | `experiments/phase_grow_width_realtext.py --smoke` |
+| **Seed** | 1234 |
+| **Source → Target** | d32/h4/L3 → d64/h8/L3 (head_dim=8 const), char-level synthetic_text |
+| **FP at init** | function_preserving = **true** (grown init val CE 1.62636 == source CE; exact-init assertion held) |
+| **Correction identity@step0** | grown_corr init CE == grown init CE (B starts at 0) ✅ |
+| **Arm A random** (from scratch) | step0 CE 2.079 → final val CE **1.61313** |
+| **Arm B grown** (exact init) | step0 CE 1.271 → final val CE **1.40505** |
+| **Arm C grown+rank-8 corr** | step0 CE 1.271 → final val CE **1.39076** (best); B-norm 0→0.166 |
+| **All arms finite** | true (no NaN); elapsed 1.57s |
+| **Outcome** | **success** — committed, CPU-smokes clean → re-rent gate (committed runner) SATISFIED |
+| **Author** | ze-main (ForgeCritic still stalled since Task 003 commit; local CPU, $0) |
+
+**THE RESULT.** The runner is a single parameterized file (`--smoke` for the
+<60s CPU path; flags `--source-d 512 --target-d 1024 --n-layer 8 --ctx 256 ...`
+for the d512→d1024 real arm). It reuses the EXACT existing `grow_tx_width` /
+`LowRankCorrection` / `function_preservation_max_diff` — no reimplementation.
+Both grown arms start ~0.8 CE *below* the random arm at step 0 (exact init head
+start) and stay ahead through training; the learned rank-r correction edges out
+plain grown (1.391 vs 1.405). This is exactly the matched-FLOP signal the scale
+experiment is built to test at d512→d1024. TinyStories is wired with a graceful,
+*reported* fallback to synthetic_text when the local shard is absent (never a
+silent substitution).
+
 ### 2026-06-23 — [Phase 6 / Growth] EXACT width growth via ActiveLayerNorm (Task 004) ✅
 
 | Field | Value |

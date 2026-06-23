@@ -53,11 +53,19 @@ Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
    **1.255 → 4.77e-07** (d32→d64, trained source); correction still identity@step0
    and learns (B 0→0.201, no NaN); backward-compatible with `nn.LayerNorm`. See
    EXPERIMENTS.md 06-23. **Re-rent gate PASSED.**
-2. **[NEXT] Scale arm on ONE H100 (≤$3.29/hr).** Run the 1–100M width-growth
-   experiment per `plans/width_scaleup_v1.md` (now revised: exact preservation is
-   demonstrated, not assumed). Arms: random-init baseline vs grown vs grown+rank-32
-   correction, matched FLOPs; primary metric CE-vs-FLOPs.
-3. `plans/width_scaleup_v1.md` premise updated — the operator no longer needs a
+2. **[DONE 06-23] Real-text 3-arm scale runner built + CPU-smokes clean.** Task 005
+   added `experiments/phase_grow_width_realtext.py` (single parameterized file,
+   `--smoke` <60s CPU path; same code scales to d512→d1024 via flags). Reuses the
+   exact `grow_tx_width`/`LowRankCorrection`/`function_preservation_max_diff`.
+   Smoke: FP function_preserving=true at init, correction identity@step0, all 3
+   arms finite (random 1.613 / grown 1.405 / grown+corr 1.391 final val CE), no
+   NaN, 1.57s. See EXPERIMENTS.md 06-23. **Re-rent gate (committed CPU-smoking
+   runner) NOW SATISFIED.**
+3. **[NEXT — rent next cycle] Scale arm on ONE H100 (≤$3.29/hr).** Push fc-001,
+   launch `phase_grow_width_realtext.py --source-d 512 --target-d 1024 --n-layer 8
+   --src-head 8 --ctx 256 --batch 64 --pretrain-steps 2000 --steps 4000 --rank 32
+   --corpus tinystories`. Primary metric CE-vs-FLOPs across the 3 arms.
+4. `plans/width_scaleup_v1.md` premise updated — operator no longer needs a
    function-preservation caveat at the width primitive.
 
 ### Prior (Phase 5c, paused)
