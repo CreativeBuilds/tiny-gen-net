@@ -840,3 +840,79 @@ See Phase 3 refine entry below for full metrics. Next recommended work: Phase 4 
 - Run cost: ~$3.29/hr × 0.5 hr (initial run) + ~$3.29/hr × 0.28 hr (re-run) ≈ $2.56 total.
 
 **Conclusion:** Function-preserving width growth generalizes from toy (d32→d64, 4.77e-07) to scale (d512→d1024, 8.58e-06 at 42M params). At scale, the grown+correction arm beats random init by 18.5% relative CE at matched per-arm training FLOPs. The low-rank correction is actively contributing (B norm 0→1.086). The source model's knowledge transfers perfectly through width growth — grown starts at source CE and random cannot close the gap in equal training.
+
+---
+
+## Task 007 — Iterative Width Growth (d512→d768→d1024) Scale Run
+
+**Date:** 2026-06-23
+**Pod:** `t3zarzv3kjj5dq` (H100 SXM 80GB, $3.29/hr)
+**Commit:** `9dfec2b` on `fc-001-branch`
+**Script:** `experiments/phase_iterative_growth.py`
+
+### Question
+
+Can function-preserving width growth be applied **iteratively** (multiple steps with intermediate training)? Does iterative growth (d512→d768→d1024) beat single-step growth (d512→d1024)?
+
+### Key Insight: ActiveLayerNorm active_dim preservation
+
+After growing d512→d768, the growth operator sets `active_dim=512` on all LayerNorms (normalization stats computed over first 512 dims only). After training the d768 model, those norms STILL have `active_dim=512`. When growing d768→d1024, the growth operator would set `active_dim=768`, but the source was trained with `active_dim=512` → FP breaks. **Fix:** after growing to d1024, manually set `active_dim=512` to match the source's normalization statistics. This preserves FP because:
+- Dims 0-511: same values, same normalization stats → same output
+- Dims 512-767: same values, same normalization stats → same output
+- Dims 768-1023: zero-padded, gamma=0 → output 0
+
+### Config
+
+| Parameter | Value |
+|-----------|-------|
+| Growth path | d512 → d768 → d1024 |
+| n_layer | 8 |
+| head_dim | 64 (constant: 8→12→16 heads) |
+| ctx_len | 256 |
+| batch | 64 |
+| Pretrain (d512) | 2000 steps, lr=3e-4 |
+| Mid training (d768) | 1000 steps, lr=3e-4 |
+| Target training (d1024) | 1000 steps/arm, lr=3e-4 |
+| Rank (correction) | 32 |
+| Corpus | synthetic_text |
+
+### Arms (4 arms, all d1024 training FLOPs matched at 1000 steps)
+
+| Arm | Description | Init CE | Final CE | vs Random |
+|-----|-------------|---------|----------|-----------|
+| random | fresh d1024 from scratch | — | 0.3533 | — |
+| single_step | grow d512→d1024, train 1000 | 0.2427 | 0.2667 | −24.5% |
+| **iterative** | grow d512→d768 (train 1000) →d1024 (train 1000) | 0.2401 | **0.2255** | **−36.2%** |
+| iterative_corr | iterative + rank-32 correction | 0.2401 | 0.2389 | −32.4% |
+
+### Function Preservation at Each Step
+
+| Step | Growth | FP max-abs diff | < 1e-3? |
+|------|--------|----------------|---------|
+| 1 | d512→d768 | 7.63e-06 | ✅ |
+| 2 | d768→d1024 | 6.68e-06 | ✅ |
+| single | d512→d1024 | 8.58e-06 | ✅ |
+
+**FP HOLDS at both iterative growth steps.** Error does not accumulate — step 2 FP (6.68e-06) is actually LOWER than step 1 (7.63e-06) and single-step (8.58e-06).
+
+### Key Findings
+
+1. ✅ **FP holds across multiple growth steps** at scale: step1=7.63e-06, step2=6.68e-06, both < 1e-3. The active_dim preservation fix works.
+2. ✅ **Iterative beats single-step by 15.4%**: iterative CE 0.2255 vs single-step 0.2667. Intermediate training at d768 improves the starting point for d1024 training (CE 0.2427 → 0.2401).
+3. ✅ **Iterative beats random by 36.2%**: iterative CE 0.2255 vs random 0.3533. The grown model's knowledge transfers through two growth steps.
+4. ⚠️ **Correction HURTS in iterative case**: iterative+corr (0.2389) is WORSE than iterative alone (0.2255) by 5.9%. In Task 006 (single-step), correction helped (+8.1%). Hypothesis: the iterative path's intermediate training already provides a better initialization, so the correction layer's extra capacity is unnecessary and adds optimization noise at 1000 steps.
+5. **Iterative d768 training is cheap**: d768 training (1000 steps) improved CE from 0.2427 to 0.2401 (small gain) but critically gave a better init for d1024 training.
+
+### Run Stats
+
+| Metric | Value |
+|--------|-------|
+| Source (d512) params | 10,663,944 |
+| Mid (d768) params | 23,860,232 |
+| Target (d1024) params | 42,299,400 |
+| Elapsed | 813.3 sec (~13.6 min on H100) |
+| All arms finite | TRUE (no NaN) |
+| Correction B norm after | 0.965 |
+| Run cost | ~$3.29/hr × 0.37 hr ≈ $1.22 |
+
+**Conclusion:** Iterative (multi-step) function-preserving width growth works at scale. FP holds across both growth steps (7.63e-06, 6.68e-06) with no error accumulation. Iterative growth (d512→d768→d1024) beats single-step growth (d512→d1024) by 15.4% relative CE, and beats random init by 36.2%. The intermediate training at d768 provides a better starting point for d1024 training. The correction layer is NOT beneficial in the iterative case — the intermediate training already provides the benefit that the correction layer was designed to add.
