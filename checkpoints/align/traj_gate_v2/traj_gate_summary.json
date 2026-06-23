@@ -1,0 +1,146 @@
+{
+  "N": 100,
+  "T": 11,
+  "D": 17608,
+  "hidden": 64,
+  "depth": 3,
+  "predict_horizon": 200,
+  "n_ckpts_ahead": 2,
+  "pca_dim": 64,
+  "ridge_alpha": 10.0,
+  "n_train": 80,
+  "n_test": 20,
+  "n_eval_points": 180,
+  "identity": {
+    "ce_mean": 1.184872425198555,
+    "ce_std": 0.36276392486705944,
+    "n": 180
+  },
+  "actual_future": {
+    "ce_mean": 0.9830539717111323,
+    "ce_std": 0.1513262658823049,
+    "n": 180,
+    "delta_vs_identity": 0.20181845348742267
+  },
+  "avg_vel_aln": {
+    "ce_mean": 1.2329010020527575,
+    "ce_std": 0.3369608255404411,
+    "n": 180,
+    "delta_vs_identity": -0.04802857685420259
+  },
+  "avg_vel_raw": {
+    "ce_mean": 1.2475329570803377,
+    "ce_std": 0.33660471601501174,
+    "n": 180,
+    "delta_vs_identity": -0.06266053188178278
+  },
+  "pca_ridge_aln": {
+    "ce_mean": 1.6134645390510558,
+    "ce_std": 0.33900439227747176,
+    "n": 180,
+    "delta_vs_identity": -0.42859211385250084
+  },
+  "pca_ridge_raw": {
+    "ce_mean": 2.4984274349113305,
+    "ce_std": 4.168825082266732,
+    "n": 180,
+    "delta_vs_identity": -1.3135550097127755
+  },
+  "mlp_aln": {
+    "ce_mean": 7.8117298473914465,
+    "ce_std": 18.293220846847483,
+    "n": 180,
+    "delta_vs_identity": -6.6268574221928915
+  },
+  "headroom": 0.20181845348742267,
+  "predictor_captures_pct": -23.797911451737356,
+  "per_t_breakdown": {
+    "0": {
+      "identity": 2.079441728591919,
+      "actual_future": 1.260344468355179,
+      "avg_vel_aln": 2.0778581988811493,
+      "avg_vel_raw": 2.080474688410759,
+      "pca_ridge_aln": 1.8596704640984534,
+      "pca_ridge_raw": 1.9465923792123796,
+      "mlp_aln": 1.7561381673812868
+    },
+    "1": {
+      "identity": 1.412945728600025,
+      "actual_future": 1.1698741401731967,
+      "avg_vel_aln": 1.4133749127388,
+      "avg_vel_raw": 1.4190188917517663,
+      "pca_ridge_aln": 1.6775762781500816,
+      "pca_ridge_raw": 1.7366317588090898,
+      "mlp_aln": 2.5038613229990005
+    },
+    "2": {
+      "identity": 1.2635696336627007,
+      "actual_future": 1.0818357868492603,
+      "avg_vel_aln": 1.2856905293464662,
+      "avg_vel_raw": 1.3155489501357078,
+      "pca_ridge_aln": 1.633945219218731,
+      "pca_ridge_raw": 1.858004857301712,
+      "mlp_aln": 4.124679952561856
+    },
+    "3": {
+      "identity": 1.1633549378812313,
+      "actual_future": 0.994570783227682,
+      "avg_vel_aln": 1.1912761501967908,
+      "avg_vel_raw": 1.2334629552066327,
+      "pca_ridge_aln": 1.5963026809692384,
+      "pca_ridge_raw": 1.9483813622593877,
+      "mlp_aln": 5.046892457604408
+    },
+    "4": {
+      "identity": 1.0827707029879092,
+      "actual_future": 0.9323503050208093,
+      "avg_vel_aln": 1.1274491629004477,
+      "avg_vel_raw": 1.1648584061861038,
+      "pca_ridge_aln": 1.5498508960008621,
+      "pca_ridge_raw": 2.2409565529227256,
+      "mlp_aln": 6.94876506268978
+    },
+    "5": {
+      "identity": 1.002475908100605,
+      "actual_future": 0.8854028081893921,
+      "avg_vel_aln": 1.0720684495568276,
+      "avg_vel_raw": 1.0920365343987943,
+      "pca_ridge_aln": 1.5419564373791217,
+      "pca_ridge_raw": 2.6704017166793346,
+      "mlp_aln": 8.784237398207187
+    },
+    "6": {
+      "identity": 0.929382791519165,
+      "actual_future": 0.8537506003677844,
+      "avg_vel_aln": 0.9994221121072769,
+      "avg_vel_raw": 1.0282559941709042,
+      "pca_ridge_aln": 1.5551941584050657,
+      "pca_ridge_raw": 3.132704697549343,
+      "mlp_aln": 11.317142708301544
+    },
+    "7": {
+      "identity": 0.8852685832977295,
+      "actual_future": 0.8415319547057152,
+      "avg_vel_aln": 0.9789169661700725,
+      "avg_vel_raw": 0.9677010715007782,
+      "pca_ridge_aln": 1.5443883125483988,
+      "pca_ridge_raw": 3.3965306074917314,
+      "mlp_aln": 13.913974962234496
+    },
+    "8": {
+      "identity": 0.84464181214571,
+      "actual_future": 0.8278248985111712,
+      "avg_vel_aln": 0.9500525365769864,
+      "avg_vel_raw": 0.9264391219615936,
+      "pca_ridge_aln": 1.5622964046895504,
+      "pca_ridge_raw": 3.5556429819762707,
+      "mlp_aln": 15.909876594543457
+    }
+  },
+  "alignment_helps_avg_vel": true,
+  "alignment_helps_pca_ridge": true,
+  "best_predictor": "avg_vel_aln",
+  "best_delta_vs_identity": -0.04802857685420259,
+  "gate_passes": false,
+  "alignment_helps": true
+}
