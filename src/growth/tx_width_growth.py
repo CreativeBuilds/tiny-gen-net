@@ -103,20 +103,32 @@ def grow_tx_width(
     return target
 
 
-def _grow_layernorm(src_ln: nn.LayerNorm, tgt_ln: nn.LayerNorm, Ds, Dt, correct):
+def _grow_layernorm(src_ln, tgt_ln, Ds, Dt, correct):
+    """Grow a norm Ds->Dt and (Task 004) make it EXACTLY function-preserving.
+
+    Task 003 finding: standard nn.LayerNorm over the FULL width Dt with new dims=0
+    is NOT exactly invertible by any static per-channel scalar — its sqrt(var+eps)
+    denominator is computed over all Dt dims, so the zero-padded new dims shrink
+    the per-token variance and re-scale the copied dims (1.26 max logit diff on a
+    trained source). A sqrt(Dt/Ds) gamma rescale made it WORSE.
+
+    Task 004 fix: the model now uses `ActiveLayerNorm`, which computes its
+    mean/variance over only the first `active_dim` channels. We copy gamma/beta on
+    the first Ds dims (new dims gamma=beta=0 -> emit 0) and set active_dim = Ds so
+    the normalization statistics are taken over exactly the original Ds dims. With
+    new dims zero, this reproduces the source's LayerNorm EXACTLY -> growth is now
+    exactly function-preserving (target FP diff < 1e-3).
+    """
     tgt_ln.weight.zero_()
     tgt_ln.bias.zero_()
     tgt_ln.weight[:Ds] = src_ln.weight
     tgt_ln.bias[:Ds] = src_ln.bias
-    # NOTE (empirically verified, see EXPERIMENTS.md): standard LayerNorm over the
-    # FULL width Dt with new dims = 0 is NOT exactly invertible by any static
-    # per-channel scalar, because the normalization denominator sqrt(var+eps) is
-    # token-dependent. The naive copy (new gamma/beta = 0) leaves a SMALL residual
-    # (~1e-2 max logit diff at d32->d64), dominated by the shrunken variance +
-    # fixed eps. We deliberately do NOT apply a sqrt(Dt/Ds) gamma rescale here —
-    # diagnostics showed it makes the residual LARGER, not smaller. New dims keep
-    # gamma=beta=0 so they emit exactly 0 and stay out of the residual stream.
-    _ = correct  # retained for API/signature compatibility; intentionally unused
+    # Inherit eps so the denominator matches the source exactly.
+    if hasattr(src_ln, "eps") and hasattr(tgt_ln, "eps"):
+        tgt_ln.eps = src_ln.eps
+    # Restrict normalization statistics to the original Ds dims.
+    if correct and hasattr(tgt_ln, "set_active_dim"):
+        tgt_ln.set_active_dim(Ds)
 
 
 def _grow_mha(src: nn.MultiheadAttention, tgt: nn.MultiheadAttention, Ds, Dt):

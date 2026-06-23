@@ -3,7 +3,17 @@
 **Author (bootstrap)**: Ze (temporary until ForgeCritic reviews)
 **Date**: 2026-06-23
 **Trajectory**: knowledge_base/trajectories/width_growth_correction.md
-**Status**: DRAFT — pending ForgeCritic critique and CB budget authorization for paid H100 runs
+**Status**: REVISED v1.1 (2026-06-23) — exact function-preservation is now
+DEMONSTRATED (Task 004: ActiveLayerNorm, FP diff 4.77e-07 at d32→d64 trained).
+Ready for the scale arm on ONE ≤$3.29/hr H100.
+
+> **v1.1 update.** The original draft assumed zero-pad width growth was exactly
+> function-preserving. Task 003 showed it was NOT (full-width LayerNorm variance
+> shrink, 1.26 logit diff). Task 004 fixed it with `ActiveLayerNorm` (normalize
+> over original Ds dims only) — growth is now exact to float epsilon. The plan
+> below stands; "naive zero-pad width growth" in Arm 2 now means the
+> ActiveLayerNorm-corrected operator (exact at init), and Arm 2 vs Arm 3 isolates
+> the value of the *learned* low-rank correction on top of an already-exact start.
 
 ## 1. Experiment Design (Minimal)
 

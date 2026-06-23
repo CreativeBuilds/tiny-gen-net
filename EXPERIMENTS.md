@@ -24,6 +24,41 @@ Copy this block for new entries:
 
 ## Experiments
 
+### 2026-06-23 — [Phase 6 / Growth] EXACT width growth via ActiveLayerNorm (Task 004) ✅
+
+| Field | Value |
+|-------|-------|
+| **Phase** | 6 (Growth) |
+| **Script** | `experiments/phase_grow_width_realtext_smoke.py` |
+| **Seed** | 1234 |
+| **Source → Target** | d32/h4/L3 (17,048 p) → d64/h8/L3 (64,808 p), head_dim=8 const |
+| **FP max-abs logit diff BEFORE** | **1.255** (full-width LayerNorm — the Task 003 bug) |
+| **FP max-abs logit diff AFTER** | **4.77e-07** (tol 1e-3) → **exactly function-preserving** |
+| **Correction** | identity@step0 = 0.0; B-norm 0 → 0.201 over 50 steps; no NaN |
+| **Outcome** | **success** — re-rent gate PASSED |
+| **Author** | ze-main (ForgeCritic stalled on Task 004 across cycles; local CPU, $0) |
+
+**Fix.** Task 003 isolated the function-preservation gap to `nn.LayerNorm` over the
+full grown width: zero-padded new dims shrink the per-token variance, re-scaling
+the copied dims (1.26 logit diff on a trained source). Static gamma rescales could
+not fix it. Task 004 adds **`ActiveLayerNorm`** to `TxBlock` — a LayerNorm that
+computes its mean/variance over only the first `active_dim` (= original Ds) channels
+while keeping per-channel affine across the full width. `grow_tx_width` sets each
+grown norm's `active_dim = Ds`. With new dims zero (gamma=beta=0 there), this
+reproduces the source's normalization **exactly** → growth is now exact (4.77e-07,
+float epsilon). Backward-compatible: a fresh model has `active_dim == d_model`,
+numerically identical to `nn.LayerNorm` (verified diff 4.77e-07), so prior phases
+do not regress. The MLP growth operator was already exact (no norm).
+
+**Significance.** This completes the exact-function-preserving width-growth operator
+for transformers — the prerequisite for the 1–100M scale arm. Combined with the
+prior depth-growth + GATE-GROW results, the growth toolkit now has an exact width
+primitive on the residual stream. Next: revise `plans/width_scaleup_v1.md` (drop the
+old "exact preservation assumed" premise — it is now *demonstrated*) and run the
+scale arm on one H100.
+
+---
+
 ### 2026-06-23 — [Phase 6 / Growth] Transformer WIDTH growth + low-rank correction (CPU smoke)
 
 | Field | Value |

@@ -68,7 +68,7 @@ def make_windows(corpus, ctx, n_windows, seed=SEED):
 def main():
     t0 = time.time()
     torch.manual_seed(SEED)
-    report = {"task": "003", "kind": "width_growth_cpu_smoke",
+    report = {"task": "004", "kind": "width_growth_cpu_smoke",
               "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     print(f"Device: {device}")
 
@@ -97,19 +97,34 @@ def main():
     print(f"Target d={TARGET_D} h={TARGET_D // (SOURCE_D // SRC_HEAD)} L={N_LAYER}: {tgt_params:,} params")
 
     # function-preservation check BEFORE any training, fixed batch.
-    # Tolerance 5e-2: standard full-width LayerNorm makes zero-pad width growth
-    # only APPROXIMATELY function-preserving (shrunken per-token variance + fixed
-    # eps leave a small residual). Documented in EXPERIMENTS.md.
-    FP_TOL = 5e-2
+    # Task 004: ActiveLayerNorm normalizes over the original Ds dims only, so
+    # zero-pad width growth is now EXACTLY function-preserving. We report both the
+    # "before" diff (full-width LayerNorm stats, active_dim=Dt — the Task 003 bug)
+    # and the "after" diff (active_dim=Ds — the fix), to make the improvement
+    # verifiable rather than asserted.
+    FP_TOL = 1e-3
     probe = xtr[:BATCH]
+
+    # BEFORE: simulate the old full-width-LayerNorm behavior by setting every
+    # grown norm's active_dim back to the full target width Dt.
+    for blk in target.blocks:
+        blk.ln1.set_active_dim(target.d_model)
+        blk.ln2.set_active_dim(target.d_model)
+    fp_diff_before = function_preservation_max_diff(source, target, probe)
+    # AFTER: restore the fix (stats over original Ds dims).
+    for blk in target.blocks:
+        blk.ln1.set_active_dim(SOURCE_D)
+        blk.ln2.set_active_dim(SOURCE_D)
     fp_diff = function_preservation_max_diff(source, target, probe)
-    print(f"Function-preservation max-abs logit diff @ step0: {fp_diff:.3e} (tol {FP_TOL:.0e})")
+    print(f"FP max-abs logit diff BEFORE (full-width LN): {fp_diff_before:.3e}")
+    print(f"FP max-abs logit diff AFTER  (active_dim=Ds):  {fp_diff:.3e} (tol {FP_TOL:.0e})")
     report["source_params"] = src_params
     report["target_params"] = tgt_params
+    report["function_preservation_max_abs_diff_before"] = fp_diff_before
     report["function_preservation_max_abs_diff"] = fp_diff
     report["function_preservation_tol"] = FP_TOL
     report["function_preserving"] = bool(fp_diff < FP_TOL)
-    report["fp_caveat"] = "approx only: full-width LayerNorm not exactly invertible by static scalars"
+    report["fp_fix"] = "ActiveLayerNorm: normalize over original Ds dims only -> exact preservation"
 
     # --- attach low-rank correction (zero-init B => identity at step0) -------
     correction = LowRankCorrection(TARGET_D, rank=RANK).to(device)

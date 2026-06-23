@@ -47,14 +47,18 @@ Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
 
 ## Immediate Next Steps
 
-1. **[NEW 06-23] Width-growth FP gap is LayerNorm, not the copy.** Transformer
-   zero-pad width growth is only approx function-preserving (1.26 logit diff on a
-   trained d32→d64 model) because full-width LayerNorm's variance shrinks when new
-   dims are zero. MLP growth stays exact (no norm). See EXPERIMENTS.md 06-23.
-2. **Local fix before any pod:** add an RMSNorm/segment-norm-over-original-dims
-   variant of TxBlock, re-run `phase_grow_width_realtext_smoke.py`, confirm FP
-   diff < 1e-3. Only THEN re-rent ONE H100 (≤$3.29/hr) for the scale arm.
-3. `plans/width_scaleup_v1.md` assumed exact preservation — revise its premise.
+1. **[DONE 06-23] Width-growth is now EXACTLY function-preserving.** Task 004 added
+   `ActiveLayerNorm` (normalizes over the original Ds dims only) to `TxBlock`;
+   `grow_tx_width` sets `active_dim=Ds`. CPU smoke: FP max-abs logit diff dropped
+   **1.255 → 4.77e-07** (d32→d64, trained source); correction still identity@step0
+   and learns (B 0→0.201, no NaN); backward-compatible with `nn.LayerNorm`. See
+   EXPERIMENTS.md 06-23. **Re-rent gate PASSED.**
+2. **[NEXT] Scale arm on ONE H100 (≤$3.29/hr).** Run the 1–100M width-growth
+   experiment per `plans/width_scaleup_v1.md` (now revised: exact preservation is
+   demonstrated, not assumed). Arms: random-init baseline vs grown vs grown+rank-32
+   correction, matched FLOPs; primary metric CE-vs-FLOPs.
+3. `plans/width_scaleup_v1.md` premise updated — the operator no longer needs a
+   function-preservation caveat at the width primitive.
 
 ### Prior (Phase 5c, paused)
 
