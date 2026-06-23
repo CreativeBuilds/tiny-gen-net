@@ -33,8 +33,19 @@ class TxSpec:
     n_layer: int
     n_head: int
     ctx_len: int = CTX_LEN
+    # scale=True relaxes the toy discrete-search caps (D/N_LAYER/N_HEAD choice
+    # membership + MAX_TX_PARAMS) so the width-growth SCALE experiment can use
+    # real dims (e.g. d512->d1024, L8). The architecture-search token vocab is
+    # unaffected (only used for scale<=128 toy specs). Structural invariants
+    # (positive dims, d_model divisible by n_head) are still enforced.
+    scale: bool = False
 
     def validate(self) -> "TxSpec":
+        if self.scale:
+            if self.d_model <= 0 or self.n_layer <= 0 or self.n_head <= 0:
+                raise ValueError(f"scale spec dims must be positive: {self}")
+            if self.d_model % self.n_head != 0: raise ValueError(f"d_model {self.d_model} not divisible by n_head {self.n_head}")
+            return self
         if self.d_model not in D_MODEL_CHOICES: raise ValueError(f"d_model {self.d_model} not in {D_MODEL_CHOICES}")
         if self.n_layer not in N_LAYER_CHOICES: raise ValueError(f"n_layer {self.n_layer} not in {N_LAYER_CHOICES}")
         if self.n_head not in N_HEAD_CHOICES: raise ValueError(f"n_head {self.n_head} not in {N_HEAD_CHOICES}")

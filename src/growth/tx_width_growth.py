@@ -76,6 +76,7 @@ def grow_tx_width(
         n_layer=source.n_layer,
         n_head=n_head_t,
         ctx_len=source.ctx_len,
+        scale=getattr(source.spec, "scale", False),
     )
     target = VariableTinyTransformer(tgt_spec, vocab_size=source.vocab_size)
 

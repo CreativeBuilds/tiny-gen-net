@@ -237,8 +237,10 @@ def main():
     probe = xtr[:args.batch]
 
     # --- source model + brief pretrain --------------------------------------
+    # scale=True so real dims (d512->d1024, L8) bypass the toy discrete-search
+    # caps; toy/smoke specs (<=128) validate identically with scale either way.
     src_spec = TxSpec(d_model=args.source_d, n_layer=args.n_layer,
-                      n_head=args.src_head, ctx_len=args.ctx)
+                      n_head=args.src_head, ctx_len=args.ctx, scale=True)
     source = VariableTinyTransformer(src_spec, vocab_size=VOCAB_SIZE).to(device)
     src_params = source.num_parameters()
     print(f"Source d={args.source_d} h={args.src_head} L={args.n_layer}: "
