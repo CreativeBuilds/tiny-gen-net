@@ -1,0 +1,96 @@
+{
+  "N": 100,
+  "T": 11,
+  "D": 17608,
+  "hidden": 64,
+  "depth": 3,
+  "predict_horizon": 100,
+  "n_ckpts_ahead": 1,
+  "window_k": 3,
+  "pca_dim": 32,
+  "mlp_hidden": 128,
+  "mlp_epochs": 300,
+  "mlp_wd": 0.01,
+  "n_train": 80,
+  "n_test": 20,
+  "n_eval_points": 160,
+  "identity": {
+    "ce_mean": 1.0016481267102062,
+    "ce_std": 0.1505311774844213,
+    "n": 160
+  },
+  "actual_future": {
+    "ce_mean": 0.9472962694428861,
+    "ce_std": 0.122548790125255,
+    "n": 160,
+    "delta_vs_identity": 0.05435185726732006
+  },
+  "window_mlp_aln": {
+    "ce_mean": 1.7574854771420358,
+    "ce_std": 0.03231514094035411,
+    "n": 160,
+    "delta_vs_identity": -0.7558373504318296
+  },
+  "window_mlp_raw": {
+    "ce_mean": 1.8762973135337233,
+    "ce_std": 0.020101088523406887,
+    "n": 160,
+    "delta_vs_identity": -0.8746491868235171
+  },
+  "headroom": 0.05435185726732006,
+  "alignment_helps": true,
+  "per_t_breakdown": {
+    "2": {
+      "identity": 1.2635696247220038,
+      "actual_future": 1.1719715671241284,
+      "window_mlp_aln": 1.8050780507922173,
+      "window_mlp_raw": 1.8879750999808311
+    },
+    "3": {
+      "identity": 1.1633549663424492,
+      "actual_future": 1.0764667722582817,
+      "window_mlp_aln": 1.76834068775177,
+      "window_mlp_raw": 1.8831050115823746
+    },
+    "4": {
+      "identity": 1.0827707067131995,
+      "actual_future": 0.9994495330750942,
+      "window_mlp_aln": 1.751837014257908,
+      "window_mlp_raw": 1.88033395498991
+    },
+    "5": {
+      "identity": 1.0024759028851986,
+      "actual_future": 0.93134729757905,
+      "window_mlp_aln": 1.748136485815048,
+      "window_mlp_raw": 1.875764680504799
+    },
+    "6": {
+      "identity": 0.9293827994167805,
+      "actual_future": 0.8787568770349026,
+      "window_mlp_aln": 1.751131864786148,
+      "window_mlp_raw": 1.8746898490190507
+    },
+    "7": {
+      "identity": 0.8852685996890068,
+      "actual_future": 0.8559615799784661,
+      "window_mlp_aln": 1.7407564720511437,
+      "window_mlp_raw": 1.869432270526886
+    },
+    "8": {
+      "identity": 0.8446418154239655,
+      "actual_future": 0.8330893215537071,
+      "window_mlp_aln": 1.750292031466961,
+      "window_mlp_raw": 1.8712572973966597
+    },
+    "9": {
+      "identity": 0.8417205984890461,
+      "actual_future": 0.8313272069394589,
+      "window_mlp_aln": 1.7443112102150917,
+      "window_mlp_raw": 1.8678203442692756
+    }
+  },
+  "best_predictor": "window_mlp_aln",
+  "best_delta_vs_identity": -0.7558373504318296,
+  "gate_passes": false,
+  "capture_pct": -1390.6375760342034
+}

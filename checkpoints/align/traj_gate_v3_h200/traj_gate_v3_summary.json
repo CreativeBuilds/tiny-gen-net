@@ -1,0 +1,90 @@
+{
+  "N": 100,
+  "T": 11,
+  "D": 17608,
+  "hidden": 64,
+  "depth": 3,
+  "predict_horizon": 200,
+  "n_ckpts_ahead": 2,
+  "window_k": 3,
+  "pca_dim": 32,
+  "mlp_hidden": 128,
+  "mlp_epochs": 300,
+  "mlp_wd": 0.01,
+  "n_train": 80,
+  "n_test": 20,
+  "n_eval_points": 140,
+  "identity": {
+    "ce_mean": 1.0244949164560861,
+    "ce_std": 0.14726410005144758,
+    "n": 140
+  },
+  "actual_future": {
+    "ce_mean": 0.9167524470176015,
+    "ce_std": 0.09349810055838147,
+    "n": 140,
+    "delta_vs_identity": 0.10774246943848464
+  },
+  "window_mlp_aln": {
+    "ce_mean": 1.7522119391816002,
+    "ce_std": 0.029951887774114734,
+    "n": 140,
+    "delta_vs_identity": -0.7277170227255141
+  },
+  "window_mlp_raw": {
+    "ce_mean": 1.8727504335130962,
+    "ce_std": 0.02272369297614667,
+    "n": 140,
+    "delta_vs_identity": -0.8482555170570101
+  },
+  "headroom": 0.10774246943848464,
+  "alignment_helps": true,
+  "per_t_breakdown": {
+    "2": {
+      "identity": 1.2635696247220038,
+      "actual_future": 1.081835788488388,
+      "window_mlp_aln": 1.7652044519782066,
+      "window_mlp_raw": 1.8810706973075866
+    },
+    "3": {
+      "identity": 1.1633549663424492,
+      "actual_future": 0.9945707674324513,
+      "window_mlp_aln": 1.7398783579468726,
+      "window_mlp_raw": 1.878286083936691
+    },
+    "4": {
+      "identity": 1.0827707067131995,
+      "actual_future": 0.9323503006994723,
+      "window_mlp_aln": 1.737831121981144,
+      "window_mlp_raw": 1.8763735431432724
+    },
+    "5": {
+      "identity": 1.0024759028851986,
+      "actual_future": 0.885402823984623,
+      "window_mlp_aln": 1.7484372609853742,
+      "window_mlp_raw": 1.871600397825241
+    },
+    "6": {
+      "identity": 0.9293827994167805,
+      "actual_future": 0.8537505976855755,
+      "window_mlp_aln": 1.7614231833815572,
+      "window_mlp_raw": 1.8701872253417968
+    },
+    "7": {
+      "identity": 0.8852685996890068,
+      "actual_future": 0.8415319640934467,
+      "window_mlp_aln": 1.7509700846672058,
+      "window_mlp_raw": 1.8648483178019526
+    },
+    "8": {
+      "identity": 0.8446418154239655,
+      "actual_future": 0.8278248867392539,
+      "window_mlp_aln": 1.7617391133308409,
+      "window_mlp_raw": 1.866886769235134
+    }
+  },
+  "best_predictor": "window_mlp_aln",
+  "best_delta_vs_identity": -0.7277170227255141,
+  "gate_passes": false,
+  "capture_pct": -675.4226318722003
+}
