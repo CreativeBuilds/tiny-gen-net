@@ -916,3 +916,83 @@ After growing d512→d768, the growth operator sets `active_dim=512` on all Laye
 | Run cost | ~$3.29/hr × 0.37 hr ≈ $1.22 |
 
 **Conclusion:** Iterative (multi-step) function-preserving width growth works at scale. FP holds across both growth steps (7.63e-06, 6.68e-06) with no error accumulation. Iterative growth (d512→d768→d1024) beats single-step growth (d512→d1024) by 15.4% relative CE, and beats random init by 36.2%. The intermediate training at d768 provides a better starting point for d1024 training. The correction layer is NOT beneficial in the iterative case — the intermediate training already provides the benefit that the correction layer was designed to add.
+
+---
+
+## Task 008 — 4x Growth Ratio (d256→d512→d1024) Scale Run
+
+**Date:** 2026-06-23
+**Pod:** `c8ys2brrllnzad` (H100 SXM 80GB, $3.29/hr)
+**Commit:** pending (code unchanged from Task 007, different CLI args)
+**Script:** `experiments/phase_iterative_growth.py`
+
+### Question
+
+Does the iterative growth advantage scale with growth ratio? Task 007 tested 2x (d512→d1024). This run tests 4x (d256→d1024) with iterative path d256→d512→d1024. Does iterative still beat single-step at larger growth ratios? Does FP hold at 4x?
+
+### Config
+
+| Parameter | Value |
+|-----------|-------|
+| Growth path | d256 → d512 → d1024 (4x total) |
+| n_layer | 8 |
+| head_dim | 64 (constant: 4→8→16 heads) |
+| ctx_len | 256 |
+| batch | 64 |
+| Pretrain (d256) | 2000 steps, lr=3e-4 |
+| Mid training (d512) | 1000 steps, lr=3e-4 |
+| Target training (d1024) | 1000 steps/arm, lr=3e-4 |
+| Rank (correction) | 32 |
+| Corpus | synthetic_text |
+
+### Arms (4 arms, all d1024 training FLOPs matched at 1000 steps)
+
+| Arm | Description | Init CE | Final CE | vs Random | vs Single-step |
+|-----|-------------|---------|----------|-----------|----------------|
+| random | fresh d1024 from scratch | — | 0.3672 | — | — |
+| single_step | grow d256→d1024, train 1000 | 0.2839 | 0.3011 | −18.0% | — |
+| **iterative** | grow d256→d512 (train 1000) →d1024 (train 1000) | 0.3085 | **0.2696** | **−26.6%** | **−10.5%** |
+| iterative_corr | iterative + rank-32 correction | 0.3085 | 0.2877 | −21.6% | −4.4% (worse than iter) |
+
+### Function Preservation at Each Step
+
+| Step | Growth | FP max-abs diff | < 1e-3? |
+|------|--------|----------------|---------|
+| 1 | d256→d512 | 0.0 | ✅ (exact) |
+| 2 | d512→d1024 | 9.54e-06 | ✅ |
+| single | d256→d1024 | 3.81e-06 | ✅ |
+
+**FP HOLDS at 4x growth ratio.** All steps well under 1e-3 tolerance.
+
+### Key Findings
+
+1. ✅ **FP holds at 4x growth**: step1=0.0 (exact), step2=9.54e-06, single=3.81e-06. All < 1e-3. Function-preserving growth scales to larger ratios.
+2. ✅ **Iterative beats single-step at 4x**: iterative CE 0.2696 vs single-step 0.3011 (−10.5%). The advantage is consistent across growth ratios.
+3. ✅ **Iterative beats random by 26.6%**: iterative CE 0.2696 vs random 0.3672.
+4. ⚠️ **Correction STILL hurts iterative**: iterative+corr (0.2877) is WORSE than iterative alone (0.2696) by 6.7%. Consistent with Task 007 finding. Correction is counterproductive for iterative growth.
+5. ⚠️ **Intermediate training at d512 WORSENED CE**: source CE 0.2839 → d512 trained CE 0.3085. The active_dim=256 constraint (normalization over only first 256 dims) limits the d512 model's learning. Despite this, iterative still beats single-step.
+6. **Iterative advantage diminishes with growth ratio**: 15.4% at 2x (Task 007) → 10.5% at 4x (Task 008). A weaker source (d256, 2.7M params vs d512, 10.7M params) provides less useful initialization, and the active_dim constraint hurts intermediate training.
+
+### Cross-Task Comparison
+
+| Task | Growth ratio | Source | Source params | Source CE | Random CE | Single CE | Iter CE | Iter vs Single | Iter vs Random |
+|------|-------------|--------|---------------|-----------|-----------|-----------|---------|----------------|----------------|
+| 006 | 2x (d512→d1024) | d512 | 10.7M | 0.2427 | 0.2673 | 0.2371* | — | — | — |
+| 007 | 2x (d512→d768→d1024) | d512 | 10.7M | 0.2427 | 0.3533 | 0.2667 | 0.2255 | −15.4% | −36.2% |
+| 008 | 4x (d256→d512→d1024) | d256 | 2.7M | 0.2839 | 0.3672 | 0.3011 | 0.2696 | −10.5% | −26.6% |
+
+*Task 006 single-step was grown+corr (0.2180), grown alone was 0.2371.
+
+### Run Stats
+
+| Metric | Value |
+|--------|-------|
+| Source (d256) params | 2,710,536 |
+| Mid (d512) params | 10,663,944 |
+| Target (d1024) params | 42,299,400 |
+| Elapsed | 717.2 sec (~12 min on H100) |
+| All arms finite | TRUE (no NaN) |
+| Correction B norm after | 0.717 |
+| Run cost | ~$3.29/hr × 0.20 hr ≈ $0.66 |
+
+**Conclusion:** Function-preserving width growth holds at 4x growth ratio (d256→d512→d1024, FP < 1e-3 at all steps). Iterative growth beats single-step by 10.5% and random by 26.6%. The iterative advantage diminishes with larger growth ratio (15.4% at 2x → 10.5% at 4x), likely because the weaker source model and the active_dim constraint limit intermediate training benefit. Correction consistently hurts iterative growth across both 2x and 4x ratios.

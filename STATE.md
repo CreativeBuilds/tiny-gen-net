@@ -1,35 +1,46 @@
 # Project State — tiny-gen-net
 
-*Last updated: 2026-06-23 21:37 UTC — Task 007 (iterative growth) COMPLETE*
+*Last updated: 2026-06-23 22:00 UTC — Task 008 (4x growth ratio) COMPLETE*
 
 ## Current Phase
 
-**Iterative width growth — COMPLETE. FP holds across multiple growth steps.**
+**Iterative width growth — scaling to larger growth ratios. COMPLETE through 4x.**
 
-Function-preserving width growth has been validated for both single-step (Task 006)
-and iterative/multi-step (Task 007) at scale:
+Function-preserving width growth has been validated for both single-step and
+iterative/multi-step at scale, across 2x and 4x growth ratios:
 
-### Task 006 (single-step d512→d1024)
+### Task 006 (single-step d512→d1024, 2x)
 - FP holds: 8.58e-06 < 1e-3 at 42M params
 - Grown+corr beats random by 18.5% (CE 0.218 vs 0.267, 2000 steps)
 - Correction layer helps (+8.1% vs grown alone)
 
-### Task 007 (iterative d512→d768→d1024)
-- **FP holds at both steps**: step1=7.63e-06, step2=6.68e-06 (both < 1e-3)
-- **Iterative beats single-step by 15.4%**: CE 0.2255 vs 0.2667 (1000 d1024 steps)
-- **Iterative beats random by 36.2%**: CE 0.2255 vs 0.3533
-- **Correction HURTS in iterative case**: 0.2389 vs 0.2255 (intermediate training already provides the benefit)
-- Key insight: ActiveLayerNorm active_dim must be preserved (not reset to source_d) when growing iteratively
+### Task 007 (iterative d512→d768→d1024, 2x)
+- FP holds at both steps: step1=7.63e-06, step2=6.68e-06 (both < 1e-3)
+- Iterative beats single-step by 15.4%: CE 0.2255 vs 0.2667
+- Iterative beats random by 36.2%
+- Correction HURTS in iterative case (0.2389 vs 0.2255)
 
-Pod `t3zarzv3kjj5dq` STOPPED. Budget $0/hr.
+### Task 008 (iterative d256→d512→d1024, 4x)
+- FP holds at 4x growth: step1=0.0 (exact), step2=9.54e-06 (both < 1e-3)
+- Iterative beats single-step by 10.5%: CE 0.2696 vs 0.3011
+- Iterative beats random by 26.6%
+- Correction STILL hurts (0.2877 vs 0.2696)
+- Intermediate d512 training with active_dim=256 WORSENED CE (0.284→0.308)
+- Iterative advantage diminishes with growth ratio (15.4% at 2x → 10.5% at 4x)
+
+Pod `c8ys2brrllnzad` STOPPED. Budget $0/hr.
+
+**Key cross-task insight:** Iterative growth consistently beats single-step across
+growth ratios, but the advantage shrinks at larger ratios (weaker source, active_dim
+constraint limits intermediate training). Correction consistently hurts iterative.
 
 **Next decision points:**
-1. Depth growth (add layers, not just width)
-2. Larger growth ratio (d256→d1024, 4x)
-3. Real TinyStories corpus
-4. 3-step iterative growth (d512→d640→d768→d1024)
-5. Longer training (does gap widen or narrow?)
-6. When does correction help vs hurt? (helps single-step, hurts iterative)
+1. Longer training (does the gap widen or narrow at 5000+ steps?)
+2. 3-step iterative growth (d512→d640→d768→d1024) — more granular steps
+3. Real TinyStories corpus (synthetic may limit generalization signal)
+4. Depth growth (add layers — prior work showed limited results, revisit?)
+5. Width+depth joint growth
+6. Correction ablation (when does correction help vs hurt? Helps single-step, hurts iterative)
 
 ---
 
@@ -74,18 +85,32 @@ Random CE ≈ 4.28. Phase 5a task-nano ref: in-grid Δ **+0.73**.
 | Target (d1024) params | 42,299,400 |
 | FP step1 (d512→d768) | 7.63e-06 (< 1e-3) |
 | FP step2 (d768→d1024) | 6.68e-06 (< 1e-3) |
-| FP single-step | 8.58e-06 (< 1e-3) |
 | Random final CE | 0.3533 |
 | Single-step final CE | 0.2667 (−24.5%) |
 | **Iterative final CE** | **0.2255 (−36.2%)** |
 | Iterative+corr final CE | 0.2389 (−32.4%) |
-| Iterative vs single-step | −15.4% |
 | Elapsed | 813 sec (~13.6 min) |
+
+### Task 008 — Iterative d256→d512→d1024 (1000 d1024 steps/arm, 4x growth)
+| Metric | Value |
+|--------|-------|
+| Source (d256) params | 2,710,536 |
+| Mid (d512) params | 10,663,944 |
+| Target (d1024) params | 42,299,400 |
+| FP step1 (d256→d512) | 0.0 (exact) |
+| FP step2 (d512→d1024) | 9.54e-06 (< 1e-3) |
+| FP single-step | 3.81e-06 (< 1e-3) |
+| Random final CE | 0.3672 |
+| Single-step final CE | 0.3011 (−18.0%) |
+| **Iterative final CE** | **0.2696 (−26.6%)** |
+| Iterative+corr final CE | 0.2877 (−21.6%, WORSE than iterative) |
+| Elapsed | 717 sec (~12 min) |
 
 ## Immediate Next Steps
 
-1. **[DONE 06-23] Width-growth EXACTLY function-preserving** — Task 004 (ActiveLayerNorm, FP 4.77e-07 at toy).
-2. **[DONE 06-23] 3-arm scale runner** — Task 005 (CPU smoke passed).
-3. **[DONE 06-23] Single-step scale run d512→d1024** — Task 006 COMPLETE. FP 8.58e-06, grown+corr beats random by 18.5%.
-4. **[DONE 06-23] Iterative growth d512→d768→d1024** — Task 007 COMPLETE. FP holds at both steps. Iterative beats single-step by 15.4%, beats random by 36.2%.
-5. **[NEXT] Decide next experiment direction** — depth growth, larger ratio, real corpus, or 3-step iterative.
+1. **[DONE 06-23] Width-growth EXACTLY function-preserving** — Task 004.
+2. **[DONE 06-23] 3-arm scale runner** — Task 005.
+3. **[DONE 06-23] Single-step scale run d512→d1024** — Task 006.
+4. **[DONE 06-23] Iterative growth d512→d768→d1024 (2x)** — Task 007.
+5. **[DONE 06-23] 4x growth ratio d256→d512→d1024** — Task 008.
+6. **[NEXT] Decide next experiment direction** — longer training, 3-step iterative, real corpus, or correction ablation.
